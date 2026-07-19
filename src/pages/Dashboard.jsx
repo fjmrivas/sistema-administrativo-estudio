@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
 import { KpiCard } from '../components/KpiCard'
+import { SinEmpresa } from '../components/SinEmpresa'
 import { sumarCampo } from '../lib/aggregate'
 import { formatoMoneda } from '../lib/format'
 
 export default function Dashboard() {
-  const { empresaId } = useEmpresa()
+  const { empresaId, loading: empresaLoading, isStaff, error: empresaError } = useEmpresa()
   const [kpis, setKpis] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -48,6 +49,19 @@ export default function Dashboard() {
       cancelled = true
     }
   }, [empresaId])
+
+  if (empresaLoading) {
+    return <p className="py-8 text-center text-sm text-navy/50">Cargando empresa…</p>
+  }
+
+  if (!empresaId) {
+    return (
+      <div>
+        <h2 className="mb-6 text-xl font-semibold text-navy">Inicio</h2>
+        <SinEmpresa isStaff={isStaff} error={empresaError} />
+      </div>
+    )
+  }
 
   return (
     <div>

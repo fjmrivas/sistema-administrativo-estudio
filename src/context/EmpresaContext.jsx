@@ -9,6 +9,7 @@ export function EmpresaProvider({ children }) {
   const [empresas, setEmpresas] = useState([])
   const [empresaId, setEmpresaId] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     if (!perfil) return
@@ -22,14 +23,18 @@ export function EmpresaProvider({ children }) {
 
     let cancelled = false
     setLoading(true)
+    setError(null)
 
     supabase
       .from('clientes')
       .select('*')
       .order('razon_social', { ascending: true })
-      .then(({ data, error }) => {
+      .then(({ data, error: err }) => {
         if (cancelled) return
-        if (error) console.error('Error cargando empresas:', error)
+        if (err) {
+          console.error('Error cargando empresas:', err)
+          setError(err.message)
+        }
         const lista = data ?? []
         setEmpresas(lista)
         setEmpresaId((prev) => prev ?? lista[0]?.id ?? null)
@@ -41,7 +46,7 @@ export function EmpresaProvider({ children }) {
     }
   }, [perfil, isStaff])
 
-  const value = { empresas, empresaId, setEmpresaId, isStaff, loading }
+  const value = { empresas, empresaId, setEmpresaId, isStaff, loading, error }
 
   return <EmpresaContext.Provider value={value}>{children}</EmpresaContext.Provider>
 }

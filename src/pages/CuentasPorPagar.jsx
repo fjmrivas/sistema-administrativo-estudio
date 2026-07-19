@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
 import { DataTable } from '../components/DataTable'
+import { SinEmpresa } from '../components/SinEmpresa'
 import { sumarCampo } from '../lib/aggregate'
 import { formatoMoneda } from '../lib/format'
 
@@ -12,7 +13,7 @@ const COLOR_SITUACION = {
 }
 
 export default function CuentasPorPagar() {
-  const { empresaId } = useEmpresa()
+  const { empresaId, loading: empresaLoading, isStaff, error: empresaError } = useEmpresa()
   const [obligaciones, setObligaciones] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -49,6 +50,19 @@ export default function CuentasPorPagar() {
     obligaciones.filter((o) => o.situacion !== 'PAGADA'),
     'saldo_pendiente'
   )
+
+  if (empresaLoading) {
+    return <p className="py-8 text-center text-sm text-navy/50">Cargando empresa…</p>
+  }
+
+  if (!empresaId) {
+    return (
+      <div>
+        <h2 className="mb-6 text-xl font-semibold text-navy">Cuentas por Pagar</h2>
+        <SinEmpresa isStaff={isStaff} error={empresaError} />
+      </div>
+    )
+  }
 
   return (
     <div>

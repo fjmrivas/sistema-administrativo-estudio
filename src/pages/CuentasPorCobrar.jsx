@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
 import { DataTable } from '../components/DataTable'
+import { SinEmpresa } from '../components/SinEmpresa'
 import { sumarCampo } from '../lib/aggregate'
 import { formatoMoneda } from '../lib/format'
 
 export default function CuentasPorCobrar() {
-  const { empresaId } = useEmpresa()
+  const { empresaId, loading: empresaLoading, isStaff, error: empresaError } = useEmpresa()
   const [facturas, setFacturas] = useState([])
   const [cobranzas, setCobranzas] = useState([])
   const [loading, setLoading] = useState(true)
@@ -46,6 +47,19 @@ export default function CuentasPorCobrar() {
   const totalPendiente = sumarCampo(facturas, 'saldo_pendiente')
   const totalCobrado =
     totalFacturado != null && totalPendiente != null ? totalFacturado - totalPendiente : null
+
+  if (empresaLoading) {
+    return <p className="py-8 text-center text-sm text-navy/50">Cargando empresa…</p>
+  }
+
+  if (!empresaId) {
+    return (
+      <div>
+        <h2 className="mb-6 text-xl font-semibold text-navy">Cuentas por Cobrar</h2>
+        <SinEmpresa isStaff={isStaff} error={empresaError} />
+      </div>
+    )
+  }
 
   return (
     <div>
