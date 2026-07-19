@@ -43,6 +43,8 @@ de columna que confirmó Francisco:
   VENCIDA / POR VENCER / PAGADA)
 - `cajas_chicas.saldo_actual`, `cajas_chicas.fondo_fijo`
 - `clientes.razon_social` (nombre a mostrar en el selector de empresa)
+- `usuarios.auth_user_id` referencia a `auth.users.id` (así se resuelve el perfil
+  logueado y su `cliente_id`)
 - Todas las tablas se filtran por `cliente_id` (FK a `clientes.id`)
 
 Las tablas de CxC y CxP renderizan **todas las columnas que devuelva la consulta**,

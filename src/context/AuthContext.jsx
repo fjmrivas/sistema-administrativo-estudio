@@ -34,7 +34,7 @@ export function AuthProvider({ children }) {
     supabase
       .from('usuarios')
       .select('*')
-      .eq('id', session.user.id)
+      .eq('auth_user_id', session.user.id)
       .maybeSingle()
       .then(({ data, error }) => {
         if (cancelled) return
