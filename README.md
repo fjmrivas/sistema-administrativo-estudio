@@ -38,15 +38,15 @@ inspeccionar el esquema en vivo — las queries se escribieron a partir de los n
 de columna que confirmó Francisco:
 
 - `facturas_venta.monto_total`, `facturas_venta.saldo_pendiente` (CxC)
-- `v_obligaciones_situacion.situacion` con valores VENCIDA / POR VENCER / PAGADA (CxP)
+- `v_obligaciones_situacion.situacion`, `.monto_total`, `.saldo_pendiente` (mismos
+  campos que `obligaciones_por_pagar`, la vista solo agrega `situacion` con valores
+  VENCIDA / POR VENCER / PAGADA)
 - `cajas_chicas.saldo_actual`, `cajas_chicas.fondo_fijo`
+- `clientes.razon_social` (nombre a mostrar en el selector de empresa)
 - Todas las tablas se filtran por `cliente_id` (FK a `clientes.id`)
 
-Todavía sin confirmar (se usan heurísticas o texto plano de fallback):
-- Campo de monto en `v_obligaciones_situacion` (se busca el primer campo que exista
-  entre `monto_total`, `monto`, `importe`, `total`, `valor`, `saldo`)
-- `clientes`: nombre para mostrar (se busca `razon_social` → `nombre_comercial` →
-  `nombre` → `ruc`, lo que exista)
-
 Las tablas de CxC y CxP renderizan **todas las columnas que devuelva la consulta**,
-así que funcionan aunque haya columnas extra o distintas al layout esperado.
+así que funcionan aunque haya columnas extra al layout esperado. Sin acceso de red
+a Supabase desde este entorno no se pudo probar el login/las queries en vivo —
+conviene correr `npm run dev` localmente y confirmar antes de dar por cerrados estos
+tres módulos.

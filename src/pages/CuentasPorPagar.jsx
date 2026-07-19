@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
 import { DataTable } from '../components/DataTable'
+import { sumarCampo } from '../lib/aggregate'
+import { formatoMoneda } from '../lib/format'
 
 const COLOR_SITUACION = {
   VENCIDA: 'bg-rojo/10 text-rojo',
@@ -43,21 +45,34 @@ export default function CuentasPorPagar() {
     return acc
   }, {})
 
+  const totalPendiente = sumarCampo(
+    obligaciones.filter((o) => o.situacion !== 'PAGADA'),
+    'saldo_pendiente'
+  )
+
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-semibold text-navy">Cuentas por Pagar</h2>
-        <div className="flex gap-2">
-          {Object.entries(resumen).map(([situacion, cantidad]) => (
-            <span
-              key={situacion}
-              className={`rounded-full px-3 py-1 text-xs font-medium ${
-                COLOR_SITUACION[situacion] ?? 'bg-navy/10 text-navy'
-              }`}
-            >
-              {situacion}: {cantidad}
-            </span>
-          ))}
+        <div className="flex flex-wrap items-center gap-3">
+          {totalPendiente != null && (
+            <p className="text-sm text-navy/60">
+              Saldo pendiente:{' '}
+              <span className="font-medium text-rojo">{formatoMoneda(totalPendiente)}</span>
+            </p>
+          )}
+          <div className="flex gap-2">
+            {Object.entries(resumen).map(([situacion, cantidad]) => (
+              <span
+                key={situacion}
+                className={`rounded-full px-3 py-1 text-xs font-medium ${
+                  COLOR_SITUACION[situacion] ?? 'bg-navy/10 text-navy'
+                }`}
+              >
+                {situacion}: {cantidad}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 

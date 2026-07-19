@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
 import { KpiCard } from '../components/KpiCard'
-import { sumarCampo, sumarPosibleCampo } from '../lib/aggregate'
+import { sumarCampo } from '../lib/aggregate'
 import { formatoMoneda } from '../lib/format'
 
 export default function Dashboard() {
@@ -23,7 +23,7 @@ export default function Dashboard() {
           .eq('cliente_id', empresaId),
         supabase
           .from('v_obligaciones_situacion')
-          .select('*')
+          .select('saldo_pendiente')
           .eq('cliente_id', empresaId)
           .neq('situacion', 'PAGADA'),
         supabase
@@ -35,7 +35,7 @@ export default function Dashboard() {
       if (cancelled) return
 
       const porCobrar = sumarCampo(facturas.data, 'saldo_pendiente')
-      const porPagar = sumarPosibleCampo(obligaciones.data)
+      const porPagar = sumarCampo(obligaciones.data, 'saldo_pendiente')
       const cajaChica = sumarCampo(cajas.data, 'saldo_actual')
       const fondoFijo = sumarCampo(cajas.data, 'fondo_fijo')
 

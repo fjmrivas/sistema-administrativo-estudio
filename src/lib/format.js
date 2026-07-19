@@ -1,12 +1,6 @@
 export function nombreEmpresa(empresa) {
   if (!empresa) return ''
-  return (
-    empresa.razon_social ||
-    empresa.nombre_comercial ||
-    empresa.nombre ||
-    empresa.ruc ||
-    `Empresa ${empresa.id}`
-  )
+  return empresa.razon_social
 }
 
 export function formatoMoneda(valor, moneda = 'PEN') {
