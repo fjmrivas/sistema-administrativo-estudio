@@ -7,6 +7,12 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import CuentasPorCobrar from './pages/CuentasPorCobrar'
 import CuentasPorPagar from './pages/CuentasPorPagar'
+import NuevaFactura from './pages/NuevaFactura'
+import NuevaObligacion from './pages/NuevaObligacion'
+import Clientes from './pages/Clientes'
+import NuevoCliente from './pages/NuevoCliente'
+import Proyectos from './pages/Proyectos'
+import NuevoProyecto from './pages/NuevoProyecto'
 import Placeholder from './pages/Placeholder'
 
 function App() {
@@ -27,11 +33,15 @@ function App() {
           >
             <Route index element={<Dashboard />} />
             <Route path="cuentas-por-cobrar" element={<CuentasPorCobrar />} />
+            <Route path="cuentas-por-cobrar/nueva" element={<NuevaFactura />} />
             <Route path="cuentas-por-pagar" element={<CuentasPorPagar />} />
+            <Route path="cuentas-por-pagar/nueva" element={<NuevaObligacion />} />
             <Route path="bancos" element={<Placeholder titulo="Bancos" />} />
             <Route path="caja-chica" element={<Placeholder titulo="Caja Chica" />} />
-            <Route path="proyectos" element={<Placeholder titulo="Proyectos" />} />
-            <Route path="clientes" element={<Placeholder titulo="Clientes" />} />
+            <Route path="proyectos" element={<Proyectos />} />
+            <Route path="proyectos/nuevo" element={<NuevoProyecto />} />
+            <Route path="clientes" element={<Clientes />} />
+            <Route path="clientes/nuevo" element={<NuevoCliente />} />
             <Route path="areas" element={<Placeholder titulo="Áreas" />} />
             <Route path="presupuesto" element={<Placeholder titulo="Presupuesto" />} />
             <Route

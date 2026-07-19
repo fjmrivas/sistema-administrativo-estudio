@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
 import { DataTable } from '../components/DataTable'
 import { SinEmpresa } from '../components/SinEmpresa'
+import { NuevoButton } from '../components/NuevoButton'
 import { sumarCampo } from '../lib/aggregate'
 import { formatoMoneda } from '../lib/format'
 
@@ -87,6 +88,7 @@ export default function CuentasPorPagar() {
               </span>
             ))}
           </div>
+          <NuevoButton to="/cuentas-por-pagar/nueva">+ Nueva Obligación</NuevoButton>
         </div>
       </div>
 

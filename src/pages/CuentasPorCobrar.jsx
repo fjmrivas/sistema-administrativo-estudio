@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
 import { DataTable } from '../components/DataTable'
 import { SinEmpresa } from '../components/SinEmpresa'
+import { NuevoButton } from '../components/NuevoButton'
 import { sumarCampo } from '../lib/aggregate'
 import { formatoMoneda } from '../lib/format'
 
@@ -65,16 +66,19 @@ export default function CuentasPorCobrar() {
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-semibold text-navy">Cuentas por Cobrar</h2>
-        {totalFacturado != null && (
-          <p className="text-sm text-navy/60">
-            Facturado: <span className="font-medium text-navy">{formatoMoneda(totalFacturado)}</span>
-            {'  ·  '}
-            Cobrado: <span className="font-medium text-teal">{formatoMoneda(totalCobrado)}</span>
-            {'  ·  '}
-            Saldo pendiente:{' '}
-            <span className="font-medium text-violeta">{formatoMoneda(totalPendiente)}</span>
-          </p>
-        )}
+        <div className="flex flex-wrap items-center gap-3">
+          {totalFacturado != null && (
+            <p className="text-sm text-navy/60">
+              Facturado: <span className="font-medium text-navy">{formatoMoneda(totalFacturado)}</span>
+              {'  ·  '}
+              Cobrado: <span className="font-medium text-teal">{formatoMoneda(totalCobrado)}</span>
+              {'  ·  '}
+              Saldo pendiente:{' '}
+              <span className="font-medium text-violeta">{formatoMoneda(totalPendiente)}</span>
+            </p>
+          )}
+          <NuevoButton to="/cuentas-por-cobrar/nueva">+ Nueva Factura</NuevoButton>
+        </div>
       </div>
 
       {error && <p className="mb-4 text-sm text-rojo">Error cargando facturas: {error}</p>}
