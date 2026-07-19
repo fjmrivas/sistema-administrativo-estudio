@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
 import { DataTable } from '../components/DataTable'
-import { sumarPosibleCampo } from '../lib/aggregate'
+import { sumarCampo } from '../lib/aggregate'
 import { formatoMoneda } from '../lib/format'
 
 export default function CuentasPorCobrar() {
@@ -42,23 +42,23 @@ export default function CuentasPorCobrar() {
     }
   }, [empresaId])
 
-  const totalFacturado = sumarPosibleCampo(facturas)
-  const totalCobrado = sumarPosibleCampo(cobranzas)
+  const totalFacturado = sumarCampo(facturas, 'monto_total')
+  const totalPendiente = sumarCampo(facturas, 'saldo_pendiente')
+  const totalCobrado =
+    totalFacturado != null && totalPendiente != null ? totalFacturado - totalPendiente : null
 
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-semibold text-navy">Cuentas por Cobrar</h2>
-        {totalFacturado != null && totalCobrado != null && (
+        {totalFacturado != null && (
           <p className="text-sm text-navy/60">
             Facturado: <span className="font-medium text-navy">{formatoMoneda(totalFacturado)}</span>
             {'  ·  '}
             Cobrado: <span className="font-medium text-teal">{formatoMoneda(totalCobrado)}</span>
             {'  ·  '}
-            Saldo:{' '}
-            <span className="font-medium text-violeta">
-              {formatoMoneda(totalFacturado - totalCobrado)}
-            </span>
+            Saldo pendiente:{' '}
+            <span className="font-medium text-violeta">{formatoMoneda(totalPendiente)}</span>
           </p>
         )}
       </div>

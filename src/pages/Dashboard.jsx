@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
 import { KpiCard } from '../components/KpiCard'
-import { sumarPosibleCampo } from '../lib/aggregate'
+import { sumarCampo, sumarPosibleCampo } from '../lib/aggregate'
 import { formatoMoneda } from '../lib/format'
 
 export default function Dashboard() {
@@ -16,28 +16,30 @@ export default function Dashboard() {
     setLoading(true)
 
     async function cargar() {
-      const [facturas, cobranzas, obligaciones, cajas] = await Promise.all([
-        supabase.from('facturas_venta').select('*').eq('cliente_id', empresaId),
-        supabase.from('cobranzas').select('*').eq('cliente_id', empresaId),
+      const [facturas, obligaciones, cajas] = await Promise.all([
+        supabase
+          .from('facturas_venta')
+          .select('saldo_pendiente')
+          .eq('cliente_id', empresaId),
         supabase
           .from('v_obligaciones_situacion')
           .select('*')
           .eq('cliente_id', empresaId)
-          .neq('estado', 'PAGADA'),
-        supabase.from('cajas_chicas').select('*').eq('cliente_id', empresaId),
+          .neq('situacion', 'PAGADA'),
+        supabase
+          .from('cajas_chicas')
+          .select('saldo_actual, fondo_fijo')
+          .eq('cliente_id', empresaId),
       ])
 
       if (cancelled) return
 
-      const totalFacturado = sumarPosibleCampo(facturas.data)
-      const totalCobrado = sumarPosibleCampo(cobranzas.data)
-      const porCobrar =
-        totalFacturado != null && totalCobrado != null ? totalFacturado - totalCobrado : null
-
+      const porCobrar = sumarCampo(facturas.data, 'saldo_pendiente')
       const porPagar = sumarPosibleCampo(obligaciones.data)
-      const cajaChica = sumarPosibleCampo(cajas.data, ['saldo'])
+      const cajaChica = sumarCampo(cajas.data, 'saldo_actual')
+      const fondoFijo = sumarCampo(cajas.data, 'fondo_fijo')
 
-      setKpis({ porCobrar, porPagar, cajaChica })
+      setKpis({ porCobrar, porPagar, cajaChica, fondoFijo })
       setLoading(false)
     }
 
@@ -66,6 +68,11 @@ export default function Dashboard() {
           titulo="Caja Chica"
           color="violeta"
           valor={loading ? '…' : kpis?.cajaChica != null ? formatoMoneda(kpis.cajaChica) : '—'}
+          nota={
+            !loading && kpis?.fondoFijo != null
+              ? `Fondo fijo: ${formatoMoneda(kpis.fondoFijo)}`
+              : undefined
+          }
         />
         <KpiCard titulo="Presupuesto Ejecutado" valor="Próximamente" nota="Módulo en construcción" />
       </div>

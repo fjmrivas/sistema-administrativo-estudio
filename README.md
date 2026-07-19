@@ -24,29 +24,29 @@ Construido:
   responsive (drawer en mobile)
 - Selector de empresa para staff
 - Dashboard con KPIs de Por Cobrar, Por Pagar y Caja Chica
-- Cuentas por Cobrar (facturas_venta + cobranzas)
+- Cuentas por Cobrar (`facturas_venta.monto_total` / `saldo_pendiente`, + `cobranzas`)
+- Cuentas por Pagar (`v_obligaciones_situacion`, agrupado por `situacion`:
+  VENCIDA / POR VENCER / PAGADA)
 
-Pendiente (rutas ya creadas como placeholder "en construcción"): Cuentas por Pagar,
-Bancos, Caja Chica, Proyectos, Clientes, Áreas, Presupuesto, Libros Electrónicos, PDT.
+Pendiente (rutas ya creadas como placeholder "en construcción"): Bancos, Caja Chica,
+Proyectos, Clientes, Áreas, Presupuesto, Libros Electrónicos, PDT.
 
-## Nota importante sobre el esquema de datos
+## Nota sobre el esquema de datos
 
-Este entorno no tiene salida de red hacia `*.supabase.co`, así que el scaffold se
-armó **sin poder inspeccionar el esquema real** de las tablas. Se asumieron nombres
-de columna razonables a partir del brief:
+Este entorno no tiene salida de red hacia `*.supabase.co`, así que no se pudo
+inspeccionar el esquema en vivo — las queries se escribieron a partir de los nombres
+de columna que confirmó Francisco:
 
-- `facturas_venta`, `cobranzas`, `cajas_chicas`, `v_obligaciones_situacion` filtradas
-  por `cliente_id` (FK a `clientes.id`)
-- Montos: se busca el primer campo que exista entre
-  `monto_total`, `monto`, `importe`, `total`, `valor`, `saldo`
-- `cajas_chicas.saldo` para el KPI de Caja Chica
-- `clientes`: nombre para mostrar tomado de `razon_social` → `nombre_comercial` →
-  `nombre` → `ruc` (lo que exista)
+- `facturas_venta.monto_total`, `facturas_venta.saldo_pendiente` (CxC)
+- `v_obligaciones_situacion.situacion` con valores VENCIDA / POR VENCER / PAGADA (CxP)
+- `cajas_chicas.saldo_actual`, `cajas_chicas.fondo_fijo`
+- Todas las tablas se filtran por `cliente_id` (FK a `clientes.id`)
 
-La tabla de Cuentas por Cobrar renderiza **todas las columnas que devuelva la
-consulta**, así que funciona aunque los nombres reales difieran — pero el formato
-(moneda/fecha) y los KPIs del Dashboard van a fallar silenciosamente (muestran "—")
-si ninguno de esos nombres coincide con el esquema real. Cuando puedas confirmar los
-nombres exactos de columnas de `facturas_venta`, `cobranzas`, `obligaciones_por_pagar`
-/ `v_obligaciones_situacion`, `cajas_chicas` y `clientes`, avisame para ajustar las
-queries y dejar los KPIs exactos en vez de heurísticos.
+Todavía sin confirmar (se usan heurísticas o texto plano de fallback):
+- Campo de monto en `v_obligaciones_situacion` (se busca el primer campo que exista
+  entre `monto_total`, `monto`, `importe`, `total`, `valor`, `saldo`)
+- `clientes`: nombre para mostrar (se busca `razon_social` → `nombre_comercial` →
+  `nombre` → `ruc`, lo que exista)
+
+Las tablas de CxC y CxP renderizan **todas las columnas que devuelva la consulta**,
+así que funcionan aunque haya columnas extra o distintas al layout esperado.

@@ -6,6 +6,7 @@ import Layout from './components/Layout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import CuentasPorCobrar from './pages/CuentasPorCobrar'
+import CuentasPorPagar from './pages/CuentasPorPagar'
 import Placeholder from './pages/Placeholder'
 
 function App() {
@@ -26,10 +27,7 @@ function App() {
           >
             <Route index element={<Dashboard />} />
             <Route path="cuentas-por-cobrar" element={<CuentasPorCobrar />} />
-            <Route
-              path="cuentas-por-pagar"
-              element={<Placeholder titulo="Cuentas por Pagar" />}
-            />
+            <Route path="cuentas-por-pagar" element={<CuentasPorPagar />} />
             <Route path="bancos" element={<Placeholder titulo="Bancos" />} />
             <Route path="caja-chica" element={<Placeholder titulo="Caja Chica" />} />
             <Route path="proyectos" element={<Placeholder titulo="Proyectos" />} />
