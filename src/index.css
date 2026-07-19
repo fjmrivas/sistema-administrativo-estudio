@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+
+  --color-navy: #0e1b3d;
+  --color-violeta: #6c4ba6;
+  --color-teal: #0fa98e;
+  --color-rojo: #c4453c;
+  --color-fondo: #f3f4fa;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-fondo);
+  font-family: var(--font-sans);
+  color: var(--color-navy);
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+}
+
+#root {
+  min-height: 100svh;
+}
