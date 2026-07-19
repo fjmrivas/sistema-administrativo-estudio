@@ -19,6 +19,7 @@ const inicial = {
   tiene_detraccion: false,
   condicion_pago_id: null,
   proyecto_id: null,
+  proveedor_id: null,
 }
 
 export default function NuevaObligacion() {
@@ -65,6 +66,7 @@ export default function NuevaObligacion() {
       tiene_detraccion: form.tiene_detraccion,
       condicion_pago_id: form.condicion_pago_id || null,
       proyecto_id: form.proyecto_id || null,
+      proveedor_id: form.proveedor_id || null,
     })
 
     setSubmitting(false)
@@ -163,6 +165,15 @@ export default function NuevaObligacion() {
           />
           Tiene detracción
         </label>
+
+        <FormField label="Proveedor">
+          <CatalogoSelect
+            tabla="terceros"
+            filtro={{ tipo: ['proveedor', 'ambos'] }}
+            value={form.proveedor_id}
+            onChange={(valor) => setForm((f) => ({ ...f, proveedor_id: valor }))}
+          />
+        </FormField>
 
         <FormField label="Condición de pago">
           <CatalogoSelect

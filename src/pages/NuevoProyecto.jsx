@@ -11,6 +11,7 @@ const inicial = {
   nombre: '',
   codigo: '',
   area_id: null,
+  responsable_id: null,
   estado: 'planificado',
   fecha_inicio: '',
   fecha_fin: '',
@@ -49,6 +50,7 @@ export default function NuevoProyecto() {
       nombre: form.nombre,
       codigo: form.codigo || null,
       area_id: form.area_id || null,
+      responsable_id: form.responsable_id || null,
       estado: form.estado,
       fecha_inicio: form.fecha_inicio || null,
       fecha_fin: form.fecha_fin || null,
@@ -83,6 +85,14 @@ export default function NuevoProyecto() {
             tabla="areas"
             value={form.area_id}
             onChange={(valor) => setForm((f) => ({ ...f, area_id: valor }))}
+          />
+        </FormField>
+
+        <FormField label="Responsable">
+          <CatalogoSelect
+            tabla="responsables"
+            value={form.responsable_id}
+            onChange={(valor) => setForm((f) => ({ ...f, responsable_id: valor }))}
           />
         </FormField>
 

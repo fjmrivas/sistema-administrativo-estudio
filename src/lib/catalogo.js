@@ -24,7 +24,7 @@ export function useCatalogo(tabla, filtro) {
 
     let query = supabase.from(tabla).select('*')
     for (const [campo, valor] of Object.entries(filtro ?? {})) {
-      query = query.eq(campo, valor)
+      query = Array.isArray(valor) ? query.in(campo, valor) : query.eq(campo, valor)
     }
 
     query.then(({ data, error }) => {

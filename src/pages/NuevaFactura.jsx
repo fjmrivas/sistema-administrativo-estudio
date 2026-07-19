@@ -18,6 +18,7 @@ const inicial = {
   saldo_pendiente: '',
   condicion_pago_id: null,
   proyecto_id: null,
+  deudor_id: null,
 }
 
 export default function NuevaFactura() {
@@ -63,6 +64,7 @@ export default function NuevaFactura() {
       saldo_pendiente: saldoPendiente,
       condicion_pago_id: form.condicion_pago_id || null,
       proyecto_id: form.proyecto_id || null,
+      deudor_id: form.deudor_id || null,
     })
 
     setSubmitting(false)
@@ -147,6 +149,15 @@ export default function NuevaFactura() {
             onChange={set('saldo_pendiente')}
             className={inputClass}
             placeholder="Por defecto, igual al monto total"
+          />
+        </FormField>
+
+        <FormField label="Deudor">
+          <CatalogoSelect
+            tabla="terceros"
+            filtro={{ tipo: ['deudor', 'ambos'] }}
+            value={form.deudor_id}
+            onChange={(valor) => setForm((f) => ({ ...f, deudor_id: valor }))}
           />
         </FormField>
 

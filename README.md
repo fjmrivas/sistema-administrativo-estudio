@@ -65,16 +65,25 @@ formularios usan los nombres reales (incluye NOT NULL: `fecha_emision`,
 `nombre` en proyectos). `saldo_pendiente` queda igual a `monto_total` si se deja
 vacío.
 
-Los selects de `condición de pago` y `proyecto` (`CatalogoSelect`,
-`src/components/CatalogoSelect.jsx`) traen las filas de `condiciones_pago` /
-`proyectos` y arman la etiqueta probando `nombre` → `descripcion` → `razon_social` →
-`codigo`, porque no se confirmó el esquema exacto de la tabla `condiciones_pago`.
-Si la etiqueta sale fea (muestra el id), decime las columnas de esa tabla y lo ajusto.
+Los selects de FK (`CatalogoSelect`, `src/components/CatalogoSelect.jsx`) traen las
+filas de la tabla indicada y arman la etiqueta probando `nombre` → `descripcion` →
+`razon_social` → `codigo` → `numero`. Confirmados y cableados:
 
-Quedan sin campo en los formularios (son `uuid` nullable sin tabla confirmada
-todavía): `facturas_venta.deudor_id`, `obligaciones_por_pagar.proveedor_id`,
-`obligaciones_por_pagar.concepto_id`, `proyectos.responsable_id`. El tipo de
-documento (`tipo_doc`) es texto libre elegido de una lista fija
-(Factura/Boleta/Nota de Crédito/etc.), no está tomado de la tabla
-`tipos_documento_facturacion` — no hay constraint de FK que lo exija, pero
-convendría cablearlo al catálogo real más adelante.
+- Condición de pago → `condiciones_pago.nombre` (muestra `nombre`)
+- Proyecto → `proyectos` filtrado por `cliente_id` de la empresa activa
+- Deudor (en Nueva Factura) → `terceros.razon_social`, filtrado por
+  `tipo IN ('deudor', 'ambos')`
+- Proveedor (en Nueva Obligación) → `terceros.razon_social`, filtrado por
+  `tipo IN ('proveedor', 'ambos')`
+- Responsable (en Nuevo Proyecto) → `responsables.nombre`
+- Área (en Nuevo Proyecto) → `areas`, etiqueta por heurística (esquema no
+  confirmado — si sale fea, pasame las columnas de `areas`)
+
+`CatalogoSelect`/`useCatalogo` (`src/lib/catalogo.js`) soportan filtros `IN` pasando
+un array como valor del filtro (ej. `{ tipo: ['deudor', 'ambos'] }`).
+
+Queda sin campo en los formularios: `obligaciones_por_pagar.concepto_id` (uuid
+nullable, tabla de catálogo aún sin confirmar). El tipo de documento (`tipo_doc`) es
+texto libre elegido de una lista fija (Factura/Boleta/Nota de Crédito/etc.), no está
+tomado de la tabla `tipos_documento_facturacion` — no hay constraint de FK que lo
+exija, pero convendría cablearlo al catálogo real más adelante.
