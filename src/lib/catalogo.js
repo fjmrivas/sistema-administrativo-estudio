@@ -7,6 +7,7 @@ export function etiquetaCatalogo(fila) {
     fila.nombre ||
     fila.descripcion ||
     fila.razon_social ||
+    fila.nro_cuenta ||
     fila.codigo ||
     fila.numero ||
     `#${String(fila.id).slice(0, 8)}`

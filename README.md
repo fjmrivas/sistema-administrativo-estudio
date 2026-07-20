@@ -33,9 +33,14 @@ Construido:
   filtrada por empresa
 - Facturas de venta y obligaciones por pagar: edición/borrado desde CxC/CxP
   (`/cuentas-por-cobrar/:id/editar`, `/cuentas-por-pagar/:id/editar`)
+- Bancos (`/bancos`): Cuentas Bancarias, Documentos de Banco y Transferencias entre
+  Cuentas, cada una con alta/edición/borrado
+- Caja Chica (`/caja-chica`): lista de cajas con alta/edición/borrado; cada caja abre
+  su propio detalle de movimientos (`/caja-chica/:cajaId/movimientos`) con
+  alta/edición/borrado de movimientos
 
-Pendiente (rutas ya creadas como placeholder "en construcción"): Bancos, Caja Chica,
-Áreas, Presupuesto, Libros Electrónicos, PDT.
+Pendiente (rutas ya creadas como placeholder "en construcción"): Áreas, Presupuesto,
+Libros Electrónicos, PDT.
 
 ## Nota sobre el esquema de datos
 
@@ -109,8 +114,41 @@ la nueva prop `acciones` de `DataTable`.
 
 La columna de Editar/Borrar solo se renderiza si `isStaff` (`cliente_id IS NULL` en
 `usuarios`) es `true` — se pasa `acciones={isStaff ? (fila) => <AccionesFila .../> :
-undefined}` en las 4 páginas, así que un usuario cliente ni ve los botones. Esto es
+undefined}` en cada página, así que un usuario cliente ni ve los botones. Esto es
 puramente cosmético: la seguridad real sigue siendo la RLS de UPDATE/DELETE que
 Francisco configuró en Supabase (solo staff) — si alguien llegara a
 `/algo/:id/editar` por URL directa sin ser staff, el formulario carga pero el
 guardado le va a fallar con el error de Postgres igual.
+
+## Bancos y Caja Chica
+
+Columnas confirmadas por `information_schema.columns` (igual que CxC/CxP):
+`cajas_chicas`, `cuentas_bancarias`, `documentos_banco`, `movimientos_caja_chica`,
+`transferencias_entre_cuentas`.
+
+**`saldo_actual` es de solo lectura**, en `cajas_chicas` y también en
+`cuentas_bancarias` (mismo patrón de columna, probablemente actualizada por trigger
+igual que la de caja chica — asumido por analogía, avisame si esto no es así para
+cuentas bancarias). Ninguno de los dos formularios (`NuevaCaja`, `NuevaCuentaBancaria`)
+lo incluye en el payload de insert/update; en las listas se ve porque `DataTable`
+renderiza todas las columnas de la fila, pero no hay forma de editarlo desde la UI.
+
+`documentos_banco` y `transferencias_entre_cuentas` no tienen columna `cliente_id`
+propia — se relacionan con la empresa indirectamente a través de
+`cuenta_bancaria_id` / `cuenta_origen_id` / `cuenta_destino_id`, que sí pertenecen a
+una cuenta de `cuentas_bancarias.cliente_id`. `Bancos.jsx` resuelve esto en dos
+pasos: primero trae las cuentas de la empresa activa, y con esos ids arma un
+`.in()` (documentos) o `.or()` con dos `.in()` (transferencias, porque puede
+aparecer como origen o como destino).
+
+Caja Chica es un patrón de lista → detalle: `/caja-chica` lista las cajas de la
+empresa activa (cada una con su botón "Movimientos"), y
+`/caja-chica/:cajaId/movimientos` muestra los movimientos de esa caja puntual con
+el saldo actual y el fondo fijo como KPIs arriba. El alta de movimiento
+(`NuevoMovimientoCaja`) fija `caja_chica_id` a la caja de la URL, no es un campo del
+formulario.
+
+Sin confirmar todavía: el campo `tercero_id` en Documentos de Banco no se filtra por
+`tipo` (puede ser cualquier tercero, no solo deudor o proveedor) porque no quedó
+claro para qué lado del movimiento aplica — si hace falta filtrarlo, avisame el
+criterio.
