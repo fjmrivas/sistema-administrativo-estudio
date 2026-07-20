@@ -3,8 +3,10 @@ import { DataTable } from '../components/DataTable'
 import { NuevoButton } from '../components/NuevoButton'
 import { AccionesFila } from '../components/AccionesFila'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
 
 export default function Clientes() {
+  const { isStaff } = useAuth()
   const [clientes, setClientes] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -54,9 +56,16 @@ export default function Clientes() {
         <DataTable
           filas={clientes}
           vacio="No hay clientes registrados."
-          acciones={(fila) => (
-            <AccionesFila editarTo={`/clientes/${fila.id}/editar`} onBorrar={() => borrar(fila.id)} />
-          )}
+          acciones={
+            isStaff
+              ? (fila) => (
+                  <AccionesFila
+                    editarTo={`/clientes/${fila.id}/editar`}
+                    onBorrar={() => borrar(fila.id)}
+                  />
+                )
+              : undefined
+          }
         />
       )}
     </div>

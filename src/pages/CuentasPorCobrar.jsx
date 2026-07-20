@@ -105,12 +105,16 @@ export default function CuentasPorCobrar() {
           <DataTable
             filas={facturas}
             vacio="No hay facturas registradas para esta empresa."
-            acciones={(fila) => (
-              <AccionesFila
-                editarTo={`/cuentas-por-cobrar/${fila.id}/editar`}
-                onBorrar={() => borrarFactura(fila.id)}
-              />
-            )}
+            acciones={
+              isStaff
+                ? (fila) => (
+                    <AccionesFila
+                      editarTo={`/cuentas-por-cobrar/${fila.id}/editar`}
+                      onBorrar={() => borrarFactura(fila.id)}
+                    />
+                  )
+                : undefined
+            }
           />
         )}
       </section>

@@ -105,8 +105,12 @@ Borrar usa `window.confirm()` como confirmación antes del `delete().eq('id', id
 sin modal, simple y suficiente para una herramienta interna. Las listas (Clientes,
 Proyectos, facturas en CxC, obligaciones en CxP) muestran una columna de acciones
 con Editar/Borrar (`AccionesFila`, `src/components/AccionesFila.jsx`) agregada vía
-la nueva prop `acciones` de `DataTable`. Como Francisco ya configuró los permisos de
-UPDATE/DELETE en Supabase solo para staff, un usuario cliente que llegue a estas
-rutas por URL directa va a recibir el error de RLS de Postgres al intentar guardar —
-no hay chequeo de rol extra en el frontend, la app confía en RLS como en el resto de
-los módulos.
+la nueva prop `acciones` de `DataTable`.
+
+La columna de Editar/Borrar solo se renderiza si `isStaff` (`cliente_id IS NULL` en
+`usuarios`) es `true` — se pasa `acciones={isStaff ? (fila) => <AccionesFila .../> :
+undefined}` en las 4 páginas, así que un usuario cliente ni ve los botones. Esto es
+puramente cosmético: la seguridad real sigue siendo la RLS de UPDATE/DELETE que
+Francisco configuró en Supabase (solo staff) — si alguien llegara a
+`/algo/:id/editar` por URL directa sin ser staff, el formulario carga pero el
+guardado le va a fallar con el error de Postgres igual.

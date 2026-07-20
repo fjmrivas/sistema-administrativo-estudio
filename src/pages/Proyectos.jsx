@@ -74,9 +74,16 @@ export default function Proyectos() {
         <DataTable
           filas={proyectos}
           vacio="No hay proyectos registrados para esta empresa."
-          acciones={(fila) => (
-            <AccionesFila editarTo={`/proyectos/${fila.id}/editar`} onBorrar={() => borrar(fila.id)} />
-          )}
+          acciones={
+            isStaff
+              ? (fila) => (
+                  <AccionesFila
+                    editarTo={`/proyectos/${fila.id}/editar`}
+                    onBorrar={() => borrar(fila.id)}
+                  />
+                )
+              : undefined
+          }
         />
       )}
     </div>

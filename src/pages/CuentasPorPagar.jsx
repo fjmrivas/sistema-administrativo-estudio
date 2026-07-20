@@ -112,12 +112,16 @@ export default function CuentasPorPagar() {
         <DataTable
           filas={obligaciones}
           vacio="No hay obligaciones por pagar registradas para esta empresa."
-          acciones={(fila) => (
-            <AccionesFila
-              editarTo={`/cuentas-por-pagar/${fila.id}/editar`}
-              onBorrar={() => borrar(fila.id)}
-            />
-          )}
+          acciones={
+            isStaff
+              ? (fila) => (
+                  <AccionesFila
+                    editarTo={`/cuentas-por-pagar/${fila.id}/editar`}
+                    onBorrar={() => borrar(fila.id)}
+                  />
+                )
+              : undefined
+          }
         />
       )}
     </div>
