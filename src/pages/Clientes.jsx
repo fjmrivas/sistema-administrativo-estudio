@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { DataTable } from '../components/DataTable'
 import { NuevoButton } from '../components/NuevoButton'
+import { AccionesFila } from '../components/AccionesFila'
 import { supabase } from '../lib/supabase'
 
 export default function Clientes() {
@@ -27,6 +28,17 @@ export default function Clientes() {
     }
   }, [])
 
+  async function borrar(id) {
+    if (!window.confirm('¿Eliminar este cliente? Esta acción no se puede deshacer.')) return
+
+    const { error: err } = await supabase.from('clientes').delete().eq('id', id)
+    if (err) {
+      setError(err.message)
+      return
+    }
+    setClientes((prev) => prev.filter((c) => c.id !== id))
+  }
+
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -34,12 +46,18 @@ export default function Clientes() {
         <NuevoButton to="/clientes/nuevo">+ Nuevo Cliente</NuevoButton>
       </div>
 
-      {error && <p className="mb-4 text-sm text-rojo">Error cargando clientes: {error}</p>}
+      {error && <p className="mb-4 text-sm text-rojo">Error: {error}</p>}
 
       {loading ? (
         <p className="py-8 text-center text-sm text-navy/50">Cargando…</p>
       ) : (
-        <DataTable filas={clientes} vacio="No hay clientes registrados." />
+        <DataTable
+          filas={clientes}
+          vacio="No hay clientes registrados."
+          acciones={(fila) => (
+            <AccionesFila editarTo={`/clientes/${fila.id}/editar`} onBorrar={() => borrar(fila.id)} />
+          )}
+        />
       )}
     </div>
   )

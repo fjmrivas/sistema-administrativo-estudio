@@ -14,7 +14,7 @@ function tituloColumna(campo) {
   return campo.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
-export function DataTable({ filas, columnas, vacio = 'Sin registros.' }) {
+export function DataTable({ filas, columnas, vacio = 'Sin registros.', acciones }) {
   if (!filas || filas.length === 0) {
     return <p className="py-8 text-center text-sm text-navy/50">{vacio}</p>
   }
@@ -31,6 +31,7 @@ export function DataTable({ filas, columnas, vacio = 'Sin registros.' }) {
                 {tituloColumna(col)}
               </th>
             ))}
+            {acciones && <th className="whitespace-nowrap px-4 py-3" />}
           </tr>
         </thead>
         <tbody>
@@ -41,6 +42,9 @@ export function DataTable({ filas, columnas, vacio = 'Sin registros.' }) {
                   {formatearValor(col, fila[col])}
                 </td>
               ))}
+              {acciones && (
+                <td className="whitespace-nowrap px-4 py-3 text-right">{acciones(fila)}</td>
+              )}
             </tr>
           ))}
         </tbody>

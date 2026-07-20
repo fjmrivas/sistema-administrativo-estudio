@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
 import { DataTable } from '../components/DataTable'
 import { NuevoButton } from '../components/NuevoButton'
+import { AccionesFila } from '../components/AccionesFila'
 import { SinEmpresa } from '../components/SinEmpresa'
 
 export default function Proyectos() {
@@ -47,6 +48,17 @@ export default function Proyectos() {
     )
   }
 
+  async function borrar(id) {
+    if (!window.confirm('¿Eliminar este proyecto? Esta acción no se puede deshacer.')) return
+
+    const { error: err } = await supabase.from('proyectos').delete().eq('id', id)
+    if (err) {
+      setError(err.message)
+      return
+    }
+    setProyectos((prev) => prev.filter((p) => p.id !== id))
+  }
+
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -54,12 +66,18 @@ export default function Proyectos() {
         <NuevoButton to="/proyectos/nuevo">+ Nuevo Proyecto</NuevoButton>
       </div>
 
-      {error && <p className="mb-4 text-sm text-rojo">Error cargando proyectos: {error}</p>}
+      {error && <p className="mb-4 text-sm text-rojo">Error: {error}</p>}
 
       {loading ? (
         <p className="py-8 text-center text-sm text-navy/50">Cargando…</p>
       ) : (
-        <DataTable filas={proyectos} vacio="No hay proyectos registrados para esta empresa." />
+        <DataTable
+          filas={proyectos}
+          vacio="No hay proyectos registrados para esta empresa."
+          acciones={(fila) => (
+            <AccionesFila editarTo={`/proyectos/${fila.id}/editar`} onBorrar={() => borrar(fila.id)} />
+          )}
+        />
       )}
     </div>
   )

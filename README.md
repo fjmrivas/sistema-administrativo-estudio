@@ -28,8 +28,11 @@ Construido:
   con alta de facturas (`/cuentas-por-cobrar/nueva`)
 - Cuentas por Pagar (`v_obligaciones_situacion`, agrupado por `situacion`:
   VENCIDA / POR VENCER / PAGADA), con alta de obligaciones (`/cuentas-por-pagar/nueva`)
-- Clientes: lista + alta (`/clientes/nuevo`)
-- Proyectos: lista + alta (`/proyectos/nuevo`), filtrada por empresa
+- Clientes: lista + alta/edición/borrado (`/clientes/nuevo`, `/clientes/:id/editar`)
+- Proyectos: lista + alta/edición/borrado (`/proyectos/nuevo`, `/proyectos/:id/editar`),
+  filtrada por empresa
+- Facturas de venta y obligaciones por pagar: edición/borrado desde CxC/CxP
+  (`/cuentas-por-cobrar/:id/editar`, `/cuentas-por-pagar/:id/editar`)
 
 Pendiente (rutas ya creadas como placeholder "en construcción"): Bancos, Caja Chica,
 Áreas, Presupuesto, Libros Electrónicos, PDT.
@@ -87,3 +90,23 @@ nullable, tabla de catálogo aún sin confirmar). El tipo de documento (`tipo_do
 texto libre elegido de una lista fija (Factura/Boleta/Nota de Crédito/etc.), no está
 tomado de la tabla `tipos_documento_facturacion` — no hay constraint de FK que lo
 exija, pero convendría cablearlo al catálogo real más adelante.
+
+## Edición y borrado
+
+Los 4 formularios de alta (`NuevoCliente`, `NuevoProyecto`, `NuevaFactura`,
+`NuevaObligacion`) también manejan edición: si la ruta trae `:id` (ej.
+`/clientes/:id/editar`), el formulario precarga el registro con `select().eq('id',
+id).single()` y el submit hace `update().eq('id', id)` en vez de `insert()`. Al
+editar, `cliente_id` no se reenvía (se deja como está en la fila) para no
+reasignarla por error si cambió la empresa activa en el selector mientras se
+editaba.
+
+Borrar usa `window.confirm()` como confirmación antes del `delete().eq('id', id)` —
+sin modal, simple y suficiente para una herramienta interna. Las listas (Clientes,
+Proyectos, facturas en CxC, obligaciones en CxP) muestran una columna de acciones
+con Editar/Borrar (`AccionesFila`, `src/components/AccionesFila.jsx`) agregada vía
+la nueva prop `acciones` de `DataTable`. Como Francisco ya configuró los permisos de
+UPDATE/DELETE en Supabase solo para staff, un usuario cliente que llegue a estas
+rutas por URL directa va a recibir el error de RLS de Postgres al intentar guardar —
+no hay chequeo de rol extra en el frontend, la app confía en RLS como en el resto de
+los módulos.

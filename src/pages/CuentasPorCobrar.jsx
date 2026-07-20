@@ -4,6 +4,7 @@ import { useEmpresa } from '../context/EmpresaContext'
 import { DataTable } from '../components/DataTable'
 import { SinEmpresa } from '../components/SinEmpresa'
 import { NuevoButton } from '../components/NuevoButton'
+import { AccionesFila } from '../components/AccionesFila'
 import { sumarCampo } from '../lib/aggregate'
 import { formatoMoneda } from '../lib/format'
 
@@ -62,6 +63,17 @@ export default function CuentasPorCobrar() {
     )
   }
 
+  async function borrarFactura(id) {
+    if (!window.confirm('¿Eliminar esta factura? Esta acción no se puede deshacer.')) return
+
+    const { error: err } = await supabase.from('facturas_venta').delete().eq('id', id)
+    if (err) {
+      setError(err.message)
+      return
+    }
+    setFacturas((prev) => prev.filter((f) => f.id !== id))
+  }
+
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -90,7 +102,16 @@ export default function CuentasPorCobrar() {
         {loading ? (
           <p className="py-8 text-center text-sm text-navy/50">Cargando…</p>
         ) : (
-          <DataTable filas={facturas} vacio="No hay facturas registradas para esta empresa." />
+          <DataTable
+            filas={facturas}
+            vacio="No hay facturas registradas para esta empresa."
+            acciones={(fila) => (
+              <AccionesFila
+                editarTo={`/cuentas-por-cobrar/${fila.id}/editar`}
+                onBorrar={() => borrarFactura(fila.id)}
+              />
+            )}
+          />
         )}
       </section>
 

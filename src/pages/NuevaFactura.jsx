@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
 import { FormField, inputClass } from '../components/FormField'
@@ -23,12 +23,50 @@ const inicial = {
 
 export default function NuevaFactura() {
   const navigate = useNavigate()
+  const { id } = useParams()
+  const editando = Boolean(id)
   const { empresaId, loading: empresaLoading, isStaff, error: empresaError } = useEmpresa()
   const [form, setForm] = useState(inicial)
+  const [cargandoRegistro, setCargandoRegistro] = useState(editando)
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
   const set = (campo) => (e) => setForm((f) => ({ ...f, [campo]: e.target.value }))
+
+  useEffect(() => {
+    if (!editando) return
+    let cancelled = false
+
+    supabase
+      .from('facturas_venta')
+      .select('*')
+      .eq('id', id)
+      .single()
+      .then(({ data, error: err }) => {
+        if (cancelled) return
+        if (err) setError(err.message)
+        if (data) {
+          setForm({
+            tipo_doc: data.tipo_doc ?? 'Factura',
+            serie: data.serie ?? '',
+            numero: data.numero ?? '',
+            fecha_emision: data.fecha_emision ?? '',
+            fecha_vencim: data.fecha_vencim ?? '',
+            moneda: data.moneda ?? 'PEN',
+            monto_total: data.monto_total != null ? String(data.monto_total) : '',
+            saldo_pendiente: data.saldo_pendiente != null ? String(data.saldo_pendiente) : '',
+            condicion_pago_id: data.condicion_pago_id,
+            proyecto_id: data.proyecto_id,
+            deudor_id: data.deudor_id,
+          })
+        }
+        setCargandoRegistro(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [editando, id])
 
   if (empresaLoading) {
     return <p className="py-8 text-center text-sm text-navy/50">Cargando empresa…</p>
@@ -37,10 +75,16 @@ export default function NuevaFactura() {
   if (!empresaId) {
     return (
       <div>
-        <h2 className="mb-6 text-xl font-semibold text-navy">Nueva Factura</h2>
+        <h2 className="mb-6 text-xl font-semibold text-navy">
+          {editando ? 'Editar Factura' : 'Nueva Factura'}
+        </h2>
         <SinEmpresa isStaff={isStaff} error={empresaError} />
       </div>
     )
+  }
+
+  if (cargandoRegistro) {
+    return <p className="py-8 text-center text-sm text-navy/50">Cargando…</p>
   }
 
   async function handleSubmit(e) {
@@ -52,8 +96,7 @@ export default function NuevaFactura() {
     const saldoPendiente =
       form.saldo_pendiente === '' ? montoTotal : Number(form.saldo_pendiente)
 
-    const { error: err } = await supabase.from('facturas_venta').insert({
-      cliente_id: empresaId,
+    const payload = {
       tipo_doc: form.tipo_doc,
       serie: form.serie || null,
       numero: form.numero || null,
@@ -65,7 +108,12 @@ export default function NuevaFactura() {
       condicion_pago_id: form.condicion_pago_id || null,
       proyecto_id: form.proyecto_id || null,
       deudor_id: form.deudor_id || null,
-    })
+    }
+    if (!editando) payload.cliente_id = empresaId
+
+    const { error: err } = editando
+      ? await supabase.from('facturas_venta').update(payload).eq('id', id)
+      : await supabase.from('facturas_venta').insert(payload)
 
     setSubmitting(false)
     if (err) {
@@ -77,7 +125,9 @@ export default function NuevaFactura() {
 
   return (
     <div className="mx-auto max-w-lg">
-      <h2 className="mb-6 text-xl font-semibold text-navy">Nueva Factura</h2>
+      <h2 className="mb-6 text-xl font-semibold text-navy">
+        {editando ? 'Editar Factura' : 'Nueva Factura'}
+      </h2>
       <form
         onSubmit={handleSubmit}
         className="flex flex-col gap-4 rounded-xl border border-navy/10 bg-white p-6"
@@ -180,7 +230,11 @@ export default function NuevaFactura() {
 
         {error && <p className="text-sm text-rojo">{error}</p>}
 
-        <FormActions submitting={submitting} onCancel={() => navigate('/cuentas-por-cobrar')} />
+        <FormActions
+          submitting={submitting}
+          onCancel={() => navigate('/cuentas-por-cobrar')}
+          label={editando ? 'Guardar cambios' : 'Guardar'}
+        />
       </form>
     </div>
   )

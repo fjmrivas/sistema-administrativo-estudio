@@ -34,14 +34,18 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="cuentas-por-cobrar" element={<CuentasPorCobrar />} />
             <Route path="cuentas-por-cobrar/nueva" element={<NuevaFactura />} />
+            <Route path="cuentas-por-cobrar/:id/editar" element={<NuevaFactura />} />
             <Route path="cuentas-por-pagar" element={<CuentasPorPagar />} />
             <Route path="cuentas-por-pagar/nueva" element={<NuevaObligacion />} />
+            <Route path="cuentas-por-pagar/:id/editar" element={<NuevaObligacion />} />
             <Route path="bancos" element={<Placeholder titulo="Bancos" />} />
             <Route path="caja-chica" element={<Placeholder titulo="Caja Chica" />} />
             <Route path="proyectos" element={<Proyectos />} />
             <Route path="proyectos/nuevo" element={<NuevoProyecto />} />
+            <Route path="proyectos/:id/editar" element={<NuevoProyecto />} />
             <Route path="clientes" element={<Clientes />} />
             <Route path="clientes/nuevo" element={<NuevoCliente />} />
+            <Route path="clientes/:id/editar" element={<NuevoCliente />} />
             <Route path="areas" element={<Placeholder titulo="Áreas" />} />
             <Route path="presupuesto" element={<Placeholder titulo="Presupuesto" />} />
             <Route

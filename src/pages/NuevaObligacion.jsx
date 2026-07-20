@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
 import { FormField, inputClass } from '../components/FormField'
@@ -24,12 +24,51 @@ const inicial = {
 
 export default function NuevaObligacion() {
   const navigate = useNavigate()
+  const { id } = useParams()
+  const editando = Boolean(id)
   const { empresaId, loading: empresaLoading, isStaff, error: empresaError } = useEmpresa()
   const [form, setForm] = useState(inicial)
+  const [cargandoRegistro, setCargandoRegistro] = useState(editando)
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
   const set = (campo) => (e) => setForm((f) => ({ ...f, [campo]: e.target.value }))
+
+  useEffect(() => {
+    if (!editando) return
+    let cancelled = false
+
+    supabase
+      .from('obligaciones_por_pagar')
+      .select('*')
+      .eq('id', id)
+      .single()
+      .then(({ data, error: err }) => {
+        if (cancelled) return
+        if (err) setError(err.message)
+        if (data) {
+          setForm({
+            tipo_doc: data.tipo_doc ?? 'Factura',
+            serie: data.serie ?? '',
+            numero_doc: data.numero_doc ?? '',
+            fecha_emision: data.fecha_emision ?? '',
+            fecha_vencim: data.fecha_vencim ?? '',
+            moneda: data.moneda ?? 'PEN',
+            monto_total: data.monto_total != null ? String(data.monto_total) : '',
+            saldo_pendiente: data.saldo_pendiente != null ? String(data.saldo_pendiente) : '',
+            tiene_detraccion: data.tiene_detraccion ?? false,
+            condicion_pago_id: data.condicion_pago_id,
+            proyecto_id: data.proyecto_id,
+            proveedor_id: data.proveedor_id,
+          })
+        }
+        setCargandoRegistro(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [editando, id])
 
   if (empresaLoading) {
     return <p className="py-8 text-center text-sm text-navy/50">Cargando empresa…</p>
@@ -38,10 +77,16 @@ export default function NuevaObligacion() {
   if (!empresaId) {
     return (
       <div>
-        <h2 className="mb-6 text-xl font-semibold text-navy">Nueva Obligación por Pagar</h2>
+        <h2 className="mb-6 text-xl font-semibold text-navy">
+          {editando ? 'Editar Obligación por Pagar' : 'Nueva Obligación por Pagar'}
+        </h2>
         <SinEmpresa isStaff={isStaff} error={empresaError} />
       </div>
     )
+  }
+
+  if (cargandoRegistro) {
+    return <p className="py-8 text-center text-sm text-navy/50">Cargando…</p>
   }
 
   async function handleSubmit(e) {
@@ -53,8 +98,7 @@ export default function NuevaObligacion() {
     const saldoPendiente =
       form.saldo_pendiente === '' ? montoTotal : Number(form.saldo_pendiente)
 
-    const { error: err } = await supabase.from('obligaciones_por_pagar').insert({
-      cliente_id: empresaId,
+    const payload = {
       tipo_doc: form.tipo_doc,
       serie: form.serie || null,
       numero_doc: form.numero_doc || null,
@@ -67,7 +111,12 @@ export default function NuevaObligacion() {
       condicion_pago_id: form.condicion_pago_id || null,
       proyecto_id: form.proyecto_id || null,
       proveedor_id: form.proveedor_id || null,
-    })
+    }
+    if (!editando) payload.cliente_id = empresaId
+
+    const { error: err } = editando
+      ? await supabase.from('obligaciones_por_pagar').update(payload).eq('id', id)
+      : await supabase.from('obligaciones_por_pagar').insert(payload)
 
     setSubmitting(false)
     if (err) {
@@ -79,7 +128,9 @@ export default function NuevaObligacion() {
 
   return (
     <div className="mx-auto max-w-lg">
-      <h2 className="mb-6 text-xl font-semibold text-navy">Nueva Obligación por Pagar</h2>
+      <h2 className="mb-6 text-xl font-semibold text-navy">
+        {editando ? 'Editar Obligación por Pagar' : 'Nueva Obligación por Pagar'}
+      </h2>
       <form
         onSubmit={handleSubmit}
         className="flex flex-col gap-4 rounded-xl border border-navy/10 bg-white p-6"
@@ -194,7 +245,11 @@ export default function NuevaObligacion() {
 
         {error && <p className="text-sm text-rojo">{error}</p>}
 
-        <FormActions submitting={submitting} onCancel={() => navigate('/cuentas-por-pagar')} />
+        <FormActions
+          submitting={submitting}
+          onCancel={() => navigate('/cuentas-por-pagar')}
+          label={editando ? 'Guardar cambios' : 'Guardar'}
+        />
       </form>
     </div>
   )
