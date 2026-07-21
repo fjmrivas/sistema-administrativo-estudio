@@ -6,7 +6,7 @@ import { DataTable } from '../components/DataTable'
 import { NuevoButton } from '../components/NuevoButton'
 import { AccionesFila } from '../components/AccionesFila'
 import { KpiCard } from '../components/KpiCard'
-import { formatoMoneda } from '../lib/format'
+import { formatoMoneda, formatoFecha } from '../lib/format'
 
 const COLOR_ESTADO = {
   registro: 'bg-navy/10 text-navy',
@@ -121,6 +121,13 @@ export default function PresupuestoDetalle() {
         {presupuesto?.cod_aprobacion && (
           <p className="text-sm text-navy/60">
             Código de aprobación: <span className="font-medium text-navy">{presupuesto.cod_aprobacion}</span>
+          </p>
+        )}
+
+        {presupuesto?.fecha_aprobacion && (
+          <p className="text-sm text-navy/60">
+            Fecha de aprobación:{' '}
+            <span className="font-medium text-navy">{formatoFecha(presupuesto.fecha_aprobacion)}</span>
           </p>
         )}
 

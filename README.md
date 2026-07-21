@@ -189,11 +189,11 @@ Cabecera (`presupuestos`) + líneas (`presupuesto_items`), columnas confirmadas 
 - El número de ítem (`item_numero`) se sugiere automáticamente al crear uno nuevo
   (máximo existente + 1 para ese presupuesto), pero queda editable por si hace falta
   reordenar.
-- **`numero` y `cod_aprobacion` de la cabecera se autogeneran en la base** (número
-  correlativo y código al aprobar) — el formulario no los pide ni los envía nunca.
-  `numero` ya se ve como columna en la lista (`Presupuestos.jsx`, render genérico de
-  `DataTable`); `cod_aprobacion` se muestra de solo lectura en el detalle
-  (`PresupuestoDetalle.jsx`) una vez que existe.
+- **`numero`, `cod_aprobacion` y `fecha_aprobacion` de la cabecera se autogeneran en
+  la base** al aprobar — el formulario no los pide ni los envía nunca. `numero` ya
+  se ve como columna en la lista (`Presupuestos.jsx`, render genérico de
+  `DataTable`); `cod_aprobacion` y `fecha_aprobacion` se muestran de solo lectura en
+  el detalle (`PresupuestoDetalle.jsx`) una vez que existen.
 - El campo `deudor_id` se muestra como **"Cliente Final"** en la interfaz (el nombre
   de columna en la base sigue siendo `deudor_id`).
 - **`estado` no tiene dropdown libre.** Al crear, no se envía en absoluto — queda en

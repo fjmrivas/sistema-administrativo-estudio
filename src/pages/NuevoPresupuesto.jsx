@@ -10,7 +10,6 @@ import { SinEmpresa } from '../components/SinEmpresa'
 const inicial = {
   periodo: new Date().getFullYear().toString(),
   fecha: '',
-  fecha_aprobacion: '',
   tiempo_entrega_dias: '',
   nombre_presupuesto: '',
   ejecutivo_id: null,
@@ -53,7 +52,6 @@ export default function NuevoPresupuesto() {
           setForm({
             periodo: data.periodo != null ? String(data.periodo) : '',
             fecha: data.fecha ?? '',
-            fecha_aprobacion: data.fecha_aprobacion ?? '',
             tiempo_entrega_dias:
               data.tiempo_entrega_dias != null ? String(data.tiempo_entrega_dias) : '',
             nombre_presupuesto: data.nombre_presupuesto ?? '',
@@ -104,7 +102,6 @@ export default function NuevoPresupuesto() {
     const payload = {
       periodo: Number(form.periodo),
       fecha: form.fecha,
-      fecha_aprobacion: form.fecha_aprobacion || null,
       tiempo_entrega_dias: form.tiempo_entrega_dias === '' ? null : Number(form.tiempo_entrega_dias),
       nombre_presupuesto: form.nombre_presupuesto || null,
       ejecutivo_id: form.ejecutivo_id || null,
@@ -171,25 +168,15 @@ export default function NuevoPresupuesto() {
           </FormField>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField label="Fecha" required>
-            <input
-              type="date"
-              required
-              value={form.fecha}
-              onChange={set('fecha')}
-              className={inputClass}
-            />
-          </FormField>
-          <FormField label="Fecha de aprobación">
-            <input
-              type="date"
-              value={form.fecha_aprobacion}
-              onChange={set('fecha_aprobacion')}
-              className={inputClass}
-            />
-          </FormField>
-        </div>
+        <FormField label="Fecha" required>
+          <input
+            type="date"
+            required
+            value={form.fecha}
+            onChange={set('fecha')}
+            className={inputClass}
+          />
+        </FormField>
 
         <FormField label="Proyecto">
           <CatalogoSelect
