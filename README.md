@@ -206,8 +206,11 @@ Cabecera (`presupuestos`) + líneas (`presupuesto_items`), columnas confirmadas 
 
 ## Maestros
 
-Los 5 catálogos que llenan los selects de FK de toda la app, mismo patrón lista +
-alta/edición/borrado filtrado por `cliente_id` que el resto de los módulos:
+Los catálogos que llenan los selects de FK de toda la app, agrupados bajo un grupo
+"Maestros" en el sidebar (`Sidebar.jsx`) — Áreas se movió ahí desde el grupo
+General.
+
+Con alta/edición/borrado (mismo patrón lista + form, filtrado por `cliente_id`):
 
 - **Terceros** (`/terceros`): `tipo` (proveedor / deudor ("Cliente Final") / ambos),
   `razon_social`, `ruc`, `email`, `telefono`
@@ -216,5 +219,10 @@ alta/edición/borrado filtrado por `cliente_id` que el resto de los módulos:
 - **Áreas** (`/areas`, reemplaza el placeholder anterior): `nombre`, `descripcion`
 - **Secciones de Presupuesto** (`/secciones-presupuesto`): solo `nombre`
 
-Agrupados bajo un nuevo grupo "Maestros" en el sidebar (`Sidebar.jsx`) — Áreas se
-movió ahí desde el grupo General.
+De solo lectura, sin alta/editar/borrar:
+
+- **Tipos de Documento** (`/tipos-documento`, `TiposDocumento.jsx`): `codigo` y
+  `nombre` de `tipos_documento_facturacion` — catálogo oficial de SUNAT, no scoped
+  por `cliente_id` (es global, igual que se usa en los selects de "Tipo de
+  documento a emitir" de Presupuesto). Sin `NuevoButton`, sin columna de acciones,
+  sin gate de `isStaff` — cualquier usuario logueado lo puede ver.

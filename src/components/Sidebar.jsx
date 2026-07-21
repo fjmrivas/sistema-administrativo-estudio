@@ -37,6 +37,7 @@ const GRUPOS = [
       { to: '/productores', label: 'Productores' },
       { to: '/areas', label: 'Áreas' },
       { to: '/secciones-presupuesto', label: 'Secciones de Presupuesto' },
+      { to: '/tipos-documento', label: 'Tipos de Documento' },
     ],
   },
 ]

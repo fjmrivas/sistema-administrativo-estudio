@@ -35,6 +35,7 @@ import Areas from './pages/Areas'
 import NuevaArea from './pages/NuevaArea'
 import SeccionesPresupuesto from './pages/SeccionesPresupuesto'
 import NuevaSeccionPresupuesto from './pages/NuevaSeccionPresupuesto'
+import TiposDocumento from './pages/TiposDocumento'
 import Placeholder from './pages/Placeholder'
 
 function App() {
@@ -106,6 +107,7 @@ function App() {
               path="secciones-presupuesto/:id/editar"
               element={<NuevaSeccionPresupuesto />}
             />
+            <Route path="tipos-documento" element={<TiposDocumento />} />
             <Route path="presupuesto" element={<Presupuestos />} />
             <Route path="presupuesto/nuevo" element={<NuevoPresupuesto />} />
             <Route path="presupuesto/:id/editar" element={<NuevoPresupuesto />} />
