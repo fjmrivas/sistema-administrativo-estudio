@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { useEmpresa } from '../context/EmpresaContext'
 import { DataTable } from '../components/DataTable'
 import { NuevoButton } from '../components/NuevoButton'
 import { AccionesFila } from '../components/AccionesFila'
 import { KpiCard } from '../components/KpiCard'
 import { formatoMoneda, formatoFecha } from '../lib/format'
+import { useMapaNombres, resolverFilas } from '../lib/relaciones'
 
 const COLOR_ESTADO = {
   registro: 'bg-navy/10 text-navy',
@@ -29,11 +31,30 @@ const ETIQUETA_ESTADO = {
 export default function PresupuestoDetalle() {
   const { presupuestoId } = useParams()
   const { isStaff } = useAuth()
+  const { empresaId } = useEmpresa()
   const [presupuesto, setPresupuesto] = useState(null)
   const [totales, setTotales] = useState(null)
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [generando, setGenerando] = useState(false)
+  const [facturaGenerada, setFacturaGenerada] = useState(null)
+
+  const mapaProveedores = useMapaNombres('terceros', 'razon_social', { cliente_id: empresaId })
+  const mapaSecciones = useMapaNombres('secciones_presupuesto', 'nombre', { cliente_id: empresaId })
+
+  const itemsResueltos = useMemo(
+    () =>
+      resolverFilas(
+        items,
+        [
+          { campoId: 'proveedor_id', campoDestino: 'proveedor', mapa: mapaProveedores },
+          { campoId: 'seccion_id', campoDestino: 'seccion', mapa: mapaSecciones },
+        ],
+        ['presupuesto_id']
+      ),
+    [items, mapaProveedores, mapaSecciones]
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -76,6 +97,22 @@ export default function PresupuestoDetalle() {
       return
     }
     setPresupuesto((prev) => (prev ? { ...prev, estado: nuevoEstado } : prev))
+  }
+
+  async function generarFactura() {
+    setError(null)
+    setGenerando(true)
+
+    const { data, error: err } = await supabase.rpc('generar_factura_desde_presupuesto', {
+      presupuesto_id: presupuestoId,
+    })
+
+    setGenerando(false)
+    if (err) {
+      setError(err.message)
+      return
+    }
+    setFacturaGenerada(data)
   }
 
   async function borrarItem(id) {
@@ -151,15 +188,37 @@ export default function PresupuestoDetalle() {
         )}
 
         {isStaff && estado === 'aprobado' && (
-          <button
-            type="button"
-            onClick={() => cambiarEstado('cerrado')}
-            className="rounded-lg bg-violeta px-3 py-1.5 text-sm font-medium text-white hover:bg-violeta/90"
-          >
-            Cerrar
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => cambiarEstado('cerrado')}
+              className="rounded-lg bg-violeta px-3 py-1.5 text-sm font-medium text-white hover:bg-violeta/90"
+            >
+              Cerrar
+            </button>
+            <button
+              type="button"
+              onClick={generarFactura}
+              disabled={generando}
+              className="rounded-lg bg-teal px-3 py-1.5 text-sm font-medium text-white hover:bg-teal/90 disabled:opacity-60"
+            >
+              {generando ? 'Generando…' : 'Generar Factura'}
+            </button>
+          </div>
         )}
       </div>
+
+      {facturaGenerada && (
+        <p className="mb-4 rounded-lg bg-teal/10 px-4 py-3 text-sm text-teal">
+          Factura generada correctamente.{' '}
+          <Link
+            to={`/cuentas-por-cobrar/${facturaGenerada}/editar`}
+            className="font-medium underline"
+          >
+            Ver factura →
+          </Link>
+        </p>
+      )}
 
       {error && <p className="mb-4 text-sm text-rojo">Error: {error}</p>}
 
@@ -184,7 +243,7 @@ export default function PresupuestoDetalle() {
       )}
 
       <DataTable
-        filas={items}
+        filas={itemsResueltos}
         vacio="No hay ítems registrados en este presupuesto."
         acciones={
           isStaff

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
 import { DataTable } from '../components/DataTable'
@@ -7,6 +7,7 @@ import { NuevoButton } from '../components/NuevoButton'
 import { AccionesFila } from '../components/AccionesFila'
 import { sumarCampo } from '../lib/aggregate'
 import { formatoMoneda } from '../lib/format'
+import { useMapaNombres, resolverFilas } from '../lib/relaciones'
 
 export default function CuentasPorCobrar() {
   const { empresaId, loading: empresaLoading, isStaff, error: empresaError } = useEmpresa()
@@ -14,6 +15,20 @@ export default function CuentasPorCobrar() {
   const [cobranzas, setCobranzas] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+
+  const mapaProyectos = useMapaNombres('proyectos', 'nombre', { cliente_id: empresaId })
+  const mapaTerceros = useMapaNombres('terceros', 'razon_social', { cliente_id: empresaId })
+  const mapaCondiciones = useMapaNombres('condiciones_pago', 'nombre')
+
+  const facturasResueltas = useMemo(
+    () =>
+      resolverFilas(facturas, [
+        { campoId: 'proyecto_id', campoDestino: 'proyecto', mapa: mapaProyectos },
+        { campoId: 'deudor_id', campoDestino: 'deudor', mapa: mapaTerceros },
+        { campoId: 'condicion_pago_id', campoDestino: 'condicion_pago', mapa: mapaCondiciones },
+      ]),
+    [facturas, mapaProyectos, mapaTerceros, mapaCondiciones]
+  )
 
   useEffect(() => {
     if (!empresaId) return
@@ -103,7 +118,7 @@ export default function CuentasPorCobrar() {
           <p className="py-8 text-center text-sm text-navy/50">Cargando…</p>
         ) : (
           <DataTable
-            filas={facturas}
+            filas={facturasResueltas}
             vacio="No hay facturas registradas para esta empresa."
             acciones={
               isStaff

@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
 import { DataTable } from '../components/DataTable'
 import { NuevoButton } from '../components/NuevoButton'
 import { AccionesFila } from '../components/AccionesFila'
 import { SinEmpresa } from '../components/SinEmpresa'
+import { useMapaNombres, resolverFilas } from '../lib/relaciones'
 
 export default function Bancos() {
   const { empresaId, loading: empresaLoading, isStaff, error: empresaError } = useEmpresa()
@@ -13,6 +14,34 @@ export default function Bancos() {
   const [transferencias, setTransferencias] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+
+  const mapaBancos = useMapaNombres('bancos', 'nombre')
+  const mapaTerceros = useMapaNombres('terceros', 'razon_social', { cliente_id: empresaId })
+  const mapaCuentas = useMemo(
+    () => new Map(cuentas.map((c) => [c.id, c.nro_cuenta])),
+    [cuentas]
+  )
+
+  const cuentasResueltas = useMemo(
+    () => resolverFilas(cuentas, [{ campoId: 'banco_id', campoDestino: 'banco', mapa: mapaBancos }]),
+    [cuentas, mapaBancos]
+  )
+  const documentosResueltos = useMemo(
+    () =>
+      resolverFilas(documentos, [
+        { campoId: 'cuenta_bancaria_id', campoDestino: 'cuenta', mapa: mapaCuentas },
+        { campoId: 'tercero_id', campoDestino: 'tercero', mapa: mapaTerceros },
+      ]),
+    [documentos, mapaCuentas, mapaTerceros]
+  )
+  const transferenciasResueltas = useMemo(
+    () =>
+      resolverFilas(transferencias, [
+        { campoId: 'cuenta_origen_id', campoDestino: 'cuenta_origen', mapa: mapaCuentas },
+        { campoId: 'cuenta_destino_id', campoDestino: 'cuenta_destino', mapa: mapaCuentas },
+      ]),
+    [transferencias, mapaCuentas]
+  )
 
   useEffect(() => {
     if (!empresaId) return
@@ -124,7 +153,7 @@ export default function Bancos() {
           <p className="py-8 text-center text-sm text-navy/50">Cargando…</p>
         ) : (
           <DataTable
-            filas={cuentas}
+            filas={cuentasResueltas}
             vacio="No hay cuentas bancarias registradas para esta empresa."
             acciones={
               isStaff
@@ -151,7 +180,7 @@ export default function Bancos() {
           <p className="py-8 text-center text-sm text-navy/50">Cargando…</p>
         ) : (
           <DataTable
-            filas={documentos}
+            filas={documentosResueltos}
             vacio="No hay documentos de banco registrados para esta empresa."
             acciones={
               isStaff
@@ -178,7 +207,7 @@ export default function Bancos() {
           <p className="py-8 text-center text-sm text-navy/50">Cargando…</p>
         ) : (
           <DataTable
-            filas={transferencias}
+            filas={transferenciasResueltas}
             vacio="No hay transferencias registradas para esta empresa."
             acciones={
               isStaff

@@ -19,7 +19,7 @@ export function DataTable({ filas, columnas, vacio = 'Sin registros.', acciones 
     return <p className="py-8 text-center text-sm text-navy/50">{vacio}</p>
   }
 
-  const cols = columnas ?? Object.keys(filas[0]).filter((c) => c !== 'id')
+  const cols = columnas ?? Object.keys(filas[0]).filter((c) => c !== 'id' && c !== 'cliente_id')
 
   return (
     <div className="overflow-x-auto rounded-xl border border-navy/10 bg-white">

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
@@ -6,12 +6,25 @@ import { DataTable } from '../components/DataTable'
 import { NuevoButton } from '../components/NuevoButton'
 import { AccionesFila } from '../components/AccionesFila'
 import { SinEmpresa } from '../components/SinEmpresa'
+import { useMapaNombres, resolverFilas } from '../lib/relaciones'
 
 export default function CajaChica() {
   const { empresaId, loading: empresaLoading, isStaff, error: empresaError } = useEmpresa()
   const [cajas, setCajas] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+
+  const mapaAreas = useMapaNombres('areas', 'nombre', { cliente_id: empresaId })
+  const mapaResponsables = useMapaNombres('responsables', 'nombre', { cliente_id: empresaId })
+
+  const cajasResueltas = useMemo(
+    () =>
+      resolverFilas(cajas, [
+        { campoId: 'area_id', campoDestino: 'area', mapa: mapaAreas },
+        { campoId: 'responsable_id', campoDestino: 'responsable', mapa: mapaResponsables },
+      ]),
+    [cajas, mapaAreas, mapaResponsables]
+  )
 
   useEffect(() => {
     if (!empresaId) return
@@ -73,7 +86,7 @@ export default function CajaChica() {
         <p className="py-8 text-center text-sm text-navy/50">Cargando…</p>
       ) : (
         <DataTable
-          filas={cajas}
+          filas={cajasResueltas}
           vacio="No hay cajas chicas registradas para esta empresa."
           acciones={(fila) => (
             <div className="flex items-center justify-end gap-3 text-sm">

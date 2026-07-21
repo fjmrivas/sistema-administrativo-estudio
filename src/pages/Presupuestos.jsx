@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
@@ -6,12 +6,35 @@ import { DataTable } from '../components/DataTable'
 import { NuevoButton } from '../components/NuevoButton'
 import { AccionesFila } from '../components/AccionesFila'
 import { SinEmpresa } from '../components/SinEmpresa'
+import { useMapaNombres, resolverFilas } from '../lib/relaciones'
 
 export default function Presupuestos() {
   const { empresaId, loading: empresaLoading, isStaff, error: empresaError } = useEmpresa()
   const [presupuestos, setPresupuestos] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+
+  const mapaClientes = useMapaNombres('clientes', 'razon_social', { id: empresaId })
+  const mapaProyectos = useMapaNombres('proyectos', 'nombre', { cliente_id: empresaId })
+  const mapaTerceros = useMapaNombres('terceros', 'razon_social', { cliente_id: empresaId })
+  const mapaEjecutivos = useMapaNombres('ejecutivos', 'nombre', { cliente_id: empresaId })
+  const mapaProductores = useMapaNombres('productores', 'nombre', { cliente_id: empresaId })
+  const mapaAreas = useMapaNombres('areas', 'nombre', { cliente_id: empresaId })
+  const mapaTiposDoc = useMapaNombres('tipos_documento_facturacion', 'nombre')
+
+  const presupuestosResueltos = useMemo(
+    () =>
+      resolverFilas(presupuestos, [
+        { campoId: 'cliente_id', campoDestino: 'cliente', mapa: mapaClientes },
+        { campoId: 'proyecto_id', campoDestino: 'proyecto', mapa: mapaProyectos },
+        { campoId: 'deudor_id', campoDestino: 'cliente_final', mapa: mapaTerceros },
+        { campoId: 'ejecutivo_id', campoDestino: 'ejecutivo', mapa: mapaEjecutivos },
+        { campoId: 'productor_id', campoDestino: 'productor', mapa: mapaProductores },
+        { campoId: 'area_id', campoDestino: 'area', mapa: mapaAreas },
+        { campoId: 'tipo_doc_emitir_id', campoDestino: 'tipo_documento', mapa: mapaTiposDoc },
+      ]),
+    [presupuestos, mapaClientes, mapaProyectos, mapaTerceros, mapaEjecutivos, mapaProductores, mapaAreas, mapaTiposDoc]
+  )
 
   useEffect(() => {
     if (!empresaId) return
@@ -74,7 +97,7 @@ export default function Presupuestos() {
         <p className="py-8 text-center text-sm text-navy/50">Cargando…</p>
       ) : (
         <DataTable
-          filas={presupuestos}
+          filas={presupuestosResueltos}
           vacio="No hay presupuestos registrados para esta empresa."
           acciones={(fila) => (
             <div className="flex items-center justify-end gap-3 text-sm">

@@ -1,20 +1,35 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { useEmpresa } from '../context/EmpresaContext'
 import { DataTable } from '../components/DataTable'
 import { NuevoButton } from '../components/NuevoButton'
 import { AccionesFila } from '../components/AccionesFila'
 import { KpiCard } from '../components/KpiCard'
 import { formatoMoneda } from '../lib/format'
+import { useMapaNombres, resolverFilas } from '../lib/relaciones'
 
 export default function CajaChicaMovimientos() {
   const { cajaId } = useParams()
   const { isStaff } = useAuth()
+  const { empresaId } = useEmpresa()
   const [caja, setCaja] = useState(null)
   const [movimientos, setMovimientos] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+
+  const mapaProyectos = useMapaNombres('proyectos', 'nombre', { cliente_id: empresaId })
+
+  const movimientosResueltos = useMemo(
+    () =>
+      resolverFilas(
+        movimientos,
+        [{ campoId: 'proyecto_id', campoDestino: 'proyecto', mapa: mapaProyectos }],
+        ['caja_chica_id']
+      ),
+    [movimientos, mapaProyectos]
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -75,7 +90,7 @@ export default function CajaChicaMovimientos() {
       {error && <p className="mb-4 text-sm text-rojo">Error: {error}</p>}
 
       <DataTable
-        filas={movimientos}
+        filas={movimientosResueltos}
         vacio="No hay movimientos registrados en esta caja."
         acciones={
           isStaff

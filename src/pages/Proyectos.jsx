@@ -1,16 +1,29 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
 import { DataTable } from '../components/DataTable'
 import { NuevoButton } from '../components/NuevoButton'
 import { AccionesFila } from '../components/AccionesFila'
 import { SinEmpresa } from '../components/SinEmpresa'
+import { useMapaNombres, resolverFilas } from '../lib/relaciones'
 
 export default function Proyectos() {
   const { empresaId, loading: empresaLoading, isStaff, error: empresaError } = useEmpresa()
   const [proyectos, setProyectos] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+
+  const mapaAreas = useMapaNombres('areas', 'nombre', { cliente_id: empresaId })
+  const mapaResponsables = useMapaNombres('responsables', 'nombre', { cliente_id: empresaId })
+
+  const proyectosResueltos = useMemo(
+    () =>
+      resolverFilas(proyectos, [
+        { campoId: 'area_id', campoDestino: 'area', mapa: mapaAreas },
+        { campoId: 'responsable_id', campoDestino: 'responsable', mapa: mapaResponsables },
+      ]),
+    [proyectos, mapaAreas, mapaResponsables]
+  )
 
   useEffect(() => {
     if (!empresaId) return
@@ -72,7 +85,7 @@ export default function Proyectos() {
         <p className="py-8 text-center text-sm text-navy/50">Cargando…</p>
       ) : (
         <DataTable
-          filas={proyectos}
+          filas={proyectosResueltos}
           vacio="No hay proyectos registrados para esta empresa."
           acciones={
             isStaff

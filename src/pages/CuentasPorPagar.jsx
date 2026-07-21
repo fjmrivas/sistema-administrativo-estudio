@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
 import { DataTable } from '../components/DataTable'
@@ -7,6 +7,7 @@ import { NuevoButton } from '../components/NuevoButton'
 import { AccionesFila } from '../components/AccionesFila'
 import { sumarCampo } from '../lib/aggregate'
 import { formatoMoneda } from '../lib/format'
+import { useMapaNombres, resolverFilas } from '../lib/relaciones'
 
 const COLOR_SITUACION = {
   VENCIDA: 'bg-rojo/10 text-rojo',
@@ -51,6 +52,20 @@ export default function CuentasPorPagar() {
   const totalPendiente = sumarCampo(
     obligaciones.filter((o) => o.situacion !== 'PAGADA'),
     'saldo_pendiente'
+  )
+
+  const mapaProyectos = useMapaNombres('proyectos', 'nombre', { cliente_id: empresaId })
+  const mapaTerceros = useMapaNombres('terceros', 'razon_social', { cliente_id: empresaId })
+  const mapaCondiciones = useMapaNombres('condiciones_pago', 'nombre')
+
+  const obligacionesResueltas = useMemo(
+    () =>
+      resolverFilas(obligaciones, [
+        { campoId: 'proyecto_id', campoDestino: 'proyecto', mapa: mapaProyectos },
+        { campoId: 'proveedor_id', campoDestino: 'proveedor', mapa: mapaTerceros },
+        { campoId: 'condicion_pago_id', campoDestino: 'condicion_pago', mapa: mapaCondiciones },
+      ]),
+    [obligaciones, mapaProyectos, mapaTerceros, mapaCondiciones]
   )
 
   if (empresaLoading) {
@@ -110,7 +125,7 @@ export default function CuentasPorPagar() {
         <p className="py-8 text-center text-sm text-navy/50">Cargando…</p>
       ) : (
         <DataTable
-          filas={obligaciones}
+          filas={obligacionesResueltas}
           vacio="No hay obligaciones por pagar registradas para esta empresa."
           acciones={
             isStaff

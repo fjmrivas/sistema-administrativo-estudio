@@ -226,3 +226,65 @@ De solo lectura, sin alta/editar/borrar:
   por `cliente_id` (es global, igual que se usa en los selects de "Tipo de
   documento a emitir" de Presupuesto). Sin `NuevoButton`, sin columna de acciones,
   sin gate de `isStaff` — cualquier usuario logueado lo puede ver.
+
+## Nombres en vez de UUIDs en las listas
+
+Las columnas FK (`ejecutivo_id`, `proyecto_id`, `deudor_id`, etc.) ya no se muestran
+como UUID crudo en ninguna lista de la app — se resuelven a su nombre real
+(`ejecutivos.nombre`, `proyectos.nombre`, `terceros.razon_social`, etc.) antes de
+pasarlas a `DataTable`.
+
+**Por qué no usa embeds de PostgREST** (`select('*, ejecutivos(nombre)')`): esa
+sintaxis depende de que existan foreign keys declaradas en Postgres entre las
+columnas y las tablas referenciadas, y esta sesión no tiene forma de confirmar eso
+contra la base real (sin acceso de red a Supabase). Si las FK no están declaradas,
+un embed falla con un error de "no se encontró la relación". En vez de arriesgar
+esa dependencia no verificada, se optó por resolver del lado del cliente con el
+mismo patrón simple de `.eq()`/`.in()` que ya se usaba en el resto de la app
+(`CatalogoSelect`, filtros de Bancos por lista de ids, etc.) — funciona sin
+importar si hay FK declaradas o no.
+
+El mecanismo vive en `src/lib/relaciones.js`:
+
+- `useMapaNombres(tabla, campoEtiqueta, filtro)`: trae `id` + el campo pedido de una
+  tabla (con el mismo filtro `{ campo: valor }` / `{ campo: [valores] }` que
+  `useCatalogo`) y arma un `Map(id → valor)`.
+- `resolverFilas(filas, resoluciones, camposOcultar)`: por cada fila, reemplaza cada
+  `campoId` (ej. `ejecutivo_id`) por un nuevo `campoDestino` (ej. `ejecutivo`) con el
+  nombre resuelto desde el mapa correspondiente, y borra cualquier columna extra en
+  `camposOcultar` (ids de scope redundantes, como `caja_chica_id` en la lista de
+  movimientos de una caja puntual, o `presupuesto_id` en la lista de ítems).
+
+Aplicado en: Presupuestos (7 FKs: cliente, proyecto, cliente final/deudor,
+ejecutivo, productor, área, tipo de documento), Proyectos (área, responsable),
+facturas en CxC (proyecto, deudor, condición de pago), obligaciones en CxP
+(proyecto, proveedor, condición de pago), Bancos — las 3 secciones (banco en
+cuentas; cuenta + tercero en documentos; cuenta origen/destino en transferencias),
+Caja Chica (área, responsable) y sus movimientos (proyecto), e ítems de presupuesto
+(proveedor, sección).
+
+De paso, `DataTable` ahora excluye `cliente_id` del render genérico por defecto
+(igual que ya excluía `id`) — es redundante en cualquier lista de esta app, porque
+siempre está filtrada a una sola empresa. La única excepción es Presupuestos, donde
+se resuelve explícitamente a `clientes.razon_social` bajo la clave `cliente` (no
+choca con el filtro porque ya no se llama `cliente_id`).
+
+## Generar Factura desde Presupuesto
+
+Botón "Generar Factura" en `PresupuestoDetalle.jsx`, visible solo cuando
+`isStaff` y el presupuesto está `aprobado` (al lado de "Cerrar"). Llama al RPC
+`supabase.rpc('generar_factura_desde_presupuesto', { presupuesto_id: presupuestoId })`.
+
+**Asunción sin confirmar**: el nombre del parámetro del RPC es `presupuesto_id` — es
+el nombre de columna que se usa consistentemente en todo este esquema
+(`presupuesto_items.presupuesto_id`, las dos vistas, etc.), así que es la apuesta
+más razonable, pero no se pudo confirmar la firma real de la función sin acceso a
+la base. Si el RPC devuelve un error de parámetro no encontrado, decime el nombre
+exacto y lo ajusto.
+
+Al generar la factura correctamente, se asume que el RPC devuelve el `id` (uuid) de
+la factura creada como valor escalar — se muestra un mensaje de éxito con un link a
+`/cuentas-por-cobrar/:id/editar` (no hay una vista de detalle de una sola factura
+todavía, así que se reusa el formulario de edición para verla). Si el RPC devuelve
+otra forma de dato (por ejemplo un objeto en vez de un uuid plano), el link va a
+salir roto — avisame si es el caso.
