@@ -198,6 +198,13 @@ export default function PresupuestoDetalle() {
             </button>
             <button
               type="button"
+              onClick={() => cambiarEstado('registro')}
+              className="rounded-lg px-3 py-1.5 text-sm font-medium text-navy/70 hover:bg-navy/5"
+            >
+              Desaprobar
+            </button>
+            <button
+              type="button"
               onClick={generarFactura}
               disabled={generando}
               className="rounded-lg bg-teal px-3 py-1.5 text-sm font-medium text-white hover:bg-teal/90 disabled:opacity-60"
