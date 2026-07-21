@@ -175,13 +175,13 @@ Cabecera (`presupuestos`) + líneas (`presupuesto_items`), columnas confirmadas 
   contra división por cero según dijiste). Editar/Borrar de un ítem sí opera sobre
   `presupuesto_items` (la tabla base), la vista es solo para mostrar.
 - Selects filtrados por empresa: Proyecto, Deudor (`terceros` tipo deudor/ambos),
-  Ejecutivo y Productor (ambos asumidos como `responsables.nombre`, filtrado por
-  `cliente_id` — avisame si Ejecutivo/Productor deberían salir de una tabla
-  distinta a Responsable), Área y Sección (`secciones_presupuesto.nombre`). Tipo de
-  documento a emitir sale de `tipos_documento_facturacion` sin filtrar (catálogo
-  global, como `condiciones_pago` y `bancos`).
+  Ejecutivo (`ejecutivos.nombre`), Productor (`productores.nombre`), Área y Sección
+  (`secciones_presupuesto.nombre`) — todos con `filtro={{ cliente_id: empresaId }}`.
+  Tipo de documento a emitir sale de `tipos_documento_facturacion` sin filtrar
+  (catálogo global, como `condiciones_pago` y `bancos`).
 - El número de ítem (`item_numero`) se sugiere automáticamente al crear uno nuevo
   (máximo existente + 1 para ese presupuesto), pero queda editable por si hace falta
   reordenar.
-- `estado` (en `presupuestos`) y `version` no se exponen en el formulario, quedan en
-  su default de la base — no había criterio claro para exponerlos todavía.
+- `estado` (`estado_documento`) es un select con las 6 opciones del enum: Registro,
+  Aprobado, Cerrado, Anulado, Finalizado, Contabilizado. `version` no se expone en
+  el formulario todavía, queda en su default de la base.

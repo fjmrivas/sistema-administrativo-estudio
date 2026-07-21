@@ -25,6 +25,7 @@ const inicial = {
   proyecto_id: null,
   fee_porcentaje: '0',
   igv_porcentaje: '18',
+  estado: 'registro',
 }
 
 export default function NuevoPresupuesto() {
@@ -71,6 +72,7 @@ export default function NuevoPresupuesto() {
             proyecto_id: data.proyecto_id,
             fee_porcentaje: data.fee_porcentaje != null ? String(data.fee_porcentaje) : '0',
             igv_porcentaje: data.igv_porcentaje != null ? String(data.igv_porcentaje) : '18',
+            estado: data.estado ?? 'registro',
           })
         }
         setCargandoRegistro(false)
@@ -123,6 +125,7 @@ export default function NuevoPresupuesto() {
       proyecto_id: form.proyecto_id || null,
       fee_porcentaje: form.fee_porcentaje === '' ? 0 : Number(form.fee_porcentaje),
       igv_porcentaje: form.igv_porcentaje === '' ? 0 : Number(form.igv_porcentaje),
+      estado: form.estado,
     }
     if (!editando) payload.cliente_id = empresaId
 
@@ -237,7 +240,7 @@ export default function NuevoPresupuesto() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField label="Ejecutivo">
             <CatalogoSelect
-              tabla="responsables"
+              tabla="ejecutivos"
               filtro={{ cliente_id: empresaId }}
               value={form.ejecutivo_id}
               onChange={(valor) => setForm((f) => ({ ...f, ejecutivo_id: valor }))}
@@ -245,7 +248,7 @@ export default function NuevoPresupuesto() {
           </FormField>
           <FormField label="Productor">
             <CatalogoSelect
-              tabla="responsables"
+              tabla="productores"
               filtro={{ cliente_id: empresaId }}
               value={form.productor_id}
               onChange={(valor) => setForm((f) => ({ ...f, productor_id: valor }))}
@@ -312,6 +315,17 @@ export default function NuevoPresupuesto() {
             />
           </FormField>
         </div>
+
+        <FormField label="Estado">
+          <select value={form.estado} onChange={set('estado')} className={inputClass}>
+            <option value="registro">Registro</option>
+            <option value="aprobado">Aprobado</option>
+            <option value="cerrado">Cerrado</option>
+            <option value="anulado">Anulado</option>
+            <option value="finalizado">Finalizado</option>
+            <option value="contabilizado">Contabilizado</option>
+          </select>
+        </FormField>
 
         {error && <p className="text-sm text-rojo">{error}</p>}
 
