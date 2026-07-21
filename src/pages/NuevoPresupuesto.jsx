@@ -9,10 +9,8 @@ import { SinEmpresa } from '../components/SinEmpresa'
 
 const inicial = {
   periodo: new Date().getFullYear().toString(),
-  numero: '',
   fecha: '',
   fecha_aprobacion: '',
-  cod_aprobacion: '',
   tiempo_entrega_dias: '',
   nombre_presupuesto: '',
   ejecutivo_id: null,
@@ -25,7 +23,6 @@ const inicial = {
   proyecto_id: null,
   fee_porcentaje: '0',
   igv_porcentaje: '18',
-  estado: 'registro',
 }
 
 export default function NuevoPresupuesto() {
@@ -55,10 +52,8 @@ export default function NuevoPresupuesto() {
         if (data) {
           setForm({
             periodo: data.periodo != null ? String(data.periodo) : '',
-            numero: data.numero != null ? String(data.numero) : '',
             fecha: data.fecha ?? '',
             fecha_aprobacion: data.fecha_aprobacion ?? '',
-            cod_aprobacion: data.cod_aprobacion ?? '',
             tiempo_entrega_dias:
               data.tiempo_entrega_dias != null ? String(data.tiempo_entrega_dias) : '',
             nombre_presupuesto: data.nombre_presupuesto ?? '',
@@ -72,7 +67,6 @@ export default function NuevoPresupuesto() {
             proyecto_id: data.proyecto_id,
             fee_porcentaje: data.fee_porcentaje != null ? String(data.fee_porcentaje) : '0',
             igv_porcentaje: data.igv_porcentaje != null ? String(data.igv_porcentaje) : '18',
-            estado: data.estado ?? 'registro',
           })
         }
         setCargandoRegistro(false)
@@ -109,10 +103,8 @@ export default function NuevoPresupuesto() {
 
     const payload = {
       periodo: Number(form.periodo),
-      numero: Number(form.numero),
       fecha: form.fecha,
       fecha_aprobacion: form.fecha_aprobacion || null,
-      cod_aprobacion: form.cod_aprobacion || null,
       tiempo_entrega_dias: form.tiempo_entrega_dias === '' ? null : Number(form.tiempo_entrega_dias),
       nombre_presupuesto: form.nombre_presupuesto || null,
       ejecutivo_id: form.ejecutivo_id || null,
@@ -125,7 +117,6 @@ export default function NuevoPresupuesto() {
       proyecto_id: form.proyecto_id || null,
       fee_porcentaje: form.fee_porcentaje === '' ? 0 : Number(form.fee_porcentaje),
       igv_porcentaje: form.igv_porcentaje === '' ? 0 : Number(form.igv_porcentaje),
-      estado: form.estado,
     }
     if (!editando) payload.cliente_id = empresaId
 
@@ -169,12 +160,12 @@ export default function NuevoPresupuesto() {
               placeholder="2026"
             />
           </FormField>
-          <FormField label="Número" required>
+          <FormField label="Tiempo de entrega (días)">
             <input
               type="number"
-              required
-              value={form.numero}
-              onChange={set('numero')}
+              min="0"
+              value={form.tiempo_entrega_dias}
+              onChange={set('tiempo_entrega_dias')}
               className={inputClass}
             />
           </FormField>
@@ -200,25 +191,6 @@ export default function NuevoPresupuesto() {
           </FormField>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField label="Código de aprobación">
-            <input
-              value={form.cod_aprobacion}
-              onChange={set('cod_aprobacion')}
-              className={inputClass}
-            />
-          </FormField>
-          <FormField label="Tiempo de entrega (días)">
-            <input
-              type="number"
-              min="0"
-              value={form.tiempo_entrega_dias}
-              onChange={set('tiempo_entrega_dias')}
-              className={inputClass}
-            />
-          </FormField>
-        </div>
-
         <FormField label="Proyecto">
           <CatalogoSelect
             tabla="proyectos"
@@ -228,7 +200,7 @@ export default function NuevoPresupuesto() {
           />
         </FormField>
 
-        <FormField label="Deudor">
+        <FormField label="Cliente Final">
           <CatalogoSelect
             tabla="terceros"
             filtro={{ tipo: ['deudor', 'ambos'] }}
@@ -315,17 +287,6 @@ export default function NuevoPresupuesto() {
             />
           </FormField>
         </div>
-
-        <FormField label="Estado">
-          <select value={form.estado} onChange={set('estado')} className={inputClass}>
-            <option value="registro">Registro</option>
-            <option value="aprobado">Aprobado</option>
-            <option value="cerrado">Cerrado</option>
-            <option value="anulado">Anulado</option>
-            <option value="finalizado">Finalizado</option>
-            <option value="contabilizado">Contabilizado</option>
-          </select>
-        </FormField>
 
         {error && <p className="text-sm text-rojo">{error}</p>}
 

@@ -8,6 +8,24 @@ import { AccionesFila } from '../components/AccionesFila'
 import { KpiCard } from '../components/KpiCard'
 import { formatoMoneda } from '../lib/format'
 
+const COLOR_ESTADO = {
+  registro: 'bg-navy/10 text-navy',
+  aprobado: 'bg-teal/10 text-teal',
+  cerrado: 'bg-violeta/10 text-violeta',
+  anulado: 'bg-rojo/10 text-rojo',
+  finalizado: 'bg-teal/10 text-teal',
+  contabilizado: 'bg-violeta/10 text-violeta',
+}
+
+const ETIQUETA_ESTADO = {
+  registro: 'Registro',
+  aprobado: 'Aprobado',
+  cerrado: 'Cerrado',
+  anulado: 'Anulado',
+  finalizado: 'Finalizado',
+  contabilizado: 'Contabilizado',
+}
+
 export default function PresupuestoDetalle() {
   const { presupuestoId } = useParams()
   const { isStaff } = useAuth()
@@ -48,6 +66,18 @@ export default function PresupuestoDetalle() {
     }
   }, [presupuestoId])
 
+  async function cambiarEstado(nuevoEstado) {
+    const { error: err } = await supabase
+      .from('presupuestos')
+      .update({ estado: nuevoEstado })
+      .eq('id', presupuestoId)
+    if (err) {
+      setError(err.message)
+      return
+    }
+    setPresupuesto((prev) => (prev ? { ...prev, estado: nuevoEstado } : prev))
+  }
+
   async function borrarItem(id) {
     if (!window.confirm('¿Eliminar este ítem? Esta acción no se puede deshacer.')) return
 
@@ -65,14 +95,63 @@ export default function PresupuestoDetalle() {
 
   const moneda = presupuesto?.moneda ?? 'PEN'
 
+  const estado = presupuesto?.estado
+
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-semibold text-navy">
           Presupuesto{presupuesto?.nombre_presupuesto ? ` — ${presupuesto.nombre_presupuesto}` : ''}
           {presupuesto?.numero != null ? ` (#${presupuesto.numero})` : ''}
         </h2>
         <NuevoButton to={`/presupuesto/${presupuestoId}/items/nuevo`}>+ Nuevo Ítem</NuevoButton>
+      </div>
+
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        {estado && (
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-medium ${
+              COLOR_ESTADO[estado] ?? 'bg-navy/10 text-navy'
+            }`}
+          >
+            {ETIQUETA_ESTADO[estado] ?? estado}
+          </span>
+        )}
+
+        {presupuesto?.cod_aprobacion && (
+          <p className="text-sm text-navy/60">
+            Código de aprobación: <span className="font-medium text-navy">{presupuesto.cod_aprobacion}</span>
+          </p>
+        )}
+
+        {isStaff && estado === 'registro' && (
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => cambiarEstado('aprobado')}
+              className="rounded-lg bg-teal px-3 py-1.5 text-sm font-medium text-white hover:bg-teal/90"
+            >
+              Aprobar
+            </button>
+            <button
+              type="button"
+              onClick={() => cambiarEstado('anulado')}
+              className="rounded-lg bg-rojo px-3 py-1.5 text-sm font-medium text-white hover:bg-rojo/90"
+            >
+              Anular
+            </button>
+          </div>
+        )}
+
+        {isStaff && estado === 'aprobado' && (
+          <button
+            type="button"
+            onClick={() => cambiarEstado('cerrado')}
+            className="rounded-lg bg-violeta px-3 py-1.5 text-sm font-medium text-white hover:bg-violeta/90"
+          >
+            Cerrar
+          </button>
+        )}
       </div>
 
       {error && <p className="mb-4 text-sm text-rojo">Error: {error}</p>}

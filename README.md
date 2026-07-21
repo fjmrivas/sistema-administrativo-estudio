@@ -182,6 +182,17 @@ Cabecera (`presupuestos`) + líneas (`presupuesto_items`), columnas confirmadas 
 - El número de ítem (`item_numero`) se sugiere automáticamente al crear uno nuevo
   (máximo existente + 1 para ese presupuesto), pero queda editable por si hace falta
   reordenar.
-- `estado` (`estado_documento`) es un select con las 6 opciones del enum: Registro,
-  Aprobado, Cerrado, Anulado, Finalizado, Contabilizado. `version` no se expone en
-  el formulario todavía, queda en su default de la base.
+- **`numero` y `cod_aprobacion` de la cabecera se autogeneran en la base** (número
+  correlativo y código al aprobar) — el formulario no los pide ni los envía nunca.
+  `numero` ya se ve como columna en la lista (`Presupuestos.jsx`, render genérico de
+  `DataTable`); `cod_aprobacion` se muestra de solo lectura en el detalle
+  (`PresupuestoDetalle.jsx`) una vez que existe.
+- El campo `deudor_id` se muestra como **"Cliente Final"** en la interfaz (el nombre
+  de columna en la base sigue siendo `deudor_id`).
+- **`estado` no tiene dropdown libre.** Al crear, no se envía en absoluto — queda en
+  el default `registro` de la base. Los cambios de estado se hacen desde
+  `PresupuestoDetalle.jsx` con botones según el estado actual: en `registro` →
+  Aprobar (`aprobado`) o Anular (`anulado`); en `aprobado` → Cerrar (`cerrado`). Los
+  demás estados (`cerrado`, `anulado`, `finalizado`, `contabilizado`) no tienen
+  botones todavía — avisame si hace falta alguna transición más. Los botones están
+  gateados por `isStaff`, igual que Editar/Borrar. `version` sigue sin exponerse.
