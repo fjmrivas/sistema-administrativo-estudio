@@ -38,9 +38,13 @@ Construido:
 - Caja Chica (`/caja-chica`): lista de cajas con alta/edición/borrado; cada caja abre
   su propio detalle de movimientos (`/caja-chica/:cajaId/movimientos`) con
   alta/edición/borrado de movimientos
+- Presupuesto (`/presupuesto`): lista de presupuestos (cabecera) con
+  alta/edición/borrado; cada uno abre su detalle de ítems
+  (`/presupuesto/:presupuestoId/items`) con los totales de
+  `v_presupuesto_totales` como KPIs y alta/edición/borrado de ítems
 
-Pendiente (rutas ya creadas como placeholder "en construcción"): Áreas, Presupuesto,
-Libros Electrónicos, PDT.
+Pendiente (rutas ya creadas como placeholder "en construcción"): Áreas, Libros
+Electrónicos, PDT.
 
 ## Nota sobre el esquema de datos
 
@@ -83,9 +87,11 @@ filas de la tabla indicada y arman la etiqueta probando `nombre` → `descripcio
   `tipo IN ('deudor', 'ambos')`
 - Proveedor (en Nueva Obligación) → `terceros.razon_social`, filtrado por
   `tipo IN ('proveedor', 'ambos')`
-- Responsable (en Nuevo Proyecto) → `responsables.nombre`
-- Área (en Nuevo Proyecto) → `areas`, etiqueta por heurística (esquema no
-  confirmado — si sale fea, pasame las columnas de `areas`)
+- Responsable (en Proyecto y Caja Chica) → `responsables.nombre`, filtrado por
+  `cliente_id` de la empresa activa
+- Área (en Proyecto, Caja Chica y Presupuesto) → `areas`, filtrado por `cliente_id`
+  de la empresa activa, etiqueta por heurística (esquema no confirmado — si sale
+  fea, pasame las columnas de `areas`)
 
 `CatalogoSelect`/`useCatalogo` (`src/lib/catalogo.js`) soportan filtros `IN` pasando
 un array como valor del filtro (ej. `{ tipo: ['deudor', 'ambos'] }`).
@@ -127,9 +133,8 @@ Columnas confirmadas por `information_schema.columns` (igual que CxC/CxP):
 `transferencias_entre_cuentas`.
 
 **`saldo_actual` es de solo lectura**, en `cajas_chicas` y también en
-`cuentas_bancarias` (mismo patrón de columna, probablemente actualizada por trigger
-igual que la de caja chica — asumido por analogía, avisame si esto no es así para
-cuentas bancarias). Ninguno de los dos formularios (`NuevaCaja`, `NuevaCuentaBancaria`)
+`cuentas_bancarias` (confirmado: mismo trigger que caja chica). Ninguno de los dos
+formularios (`NuevaCaja`, `NuevaCuentaBancaria`)
 lo incluye en el payload de insert/update; en las listas se ve porque `DataTable`
 renderiza todas las columnas de la fila, pero no hay forma de editarlo desde la UI.
 
@@ -148,7 +153,35 @@ el saldo actual y el fondo fijo como KPIs arriba. El alta de movimiento
 (`NuevoMovimientoCaja`) fija `caja_chica_id` a la caja de la URL, no es un campo del
 formulario.
 
-Sin confirmar todavía: el campo `tercero_id` en Documentos de Banco no se filtra por
-`tipo` (puede ser cualquier tercero, no solo deudor o proveedor) porque no quedó
-claro para qué lado del movimiento aplica — si hace falta filtrarlo, avisame el
-criterio.
+El campo `tercero_id` en Documentos de Banco queda sin filtrar por `tipo` a
+propósito — confirmado que no hay columna que distinga proveedor/deudor ahí, se
+ajusta más adelante si hace falta.
+
+## Presupuesto
+
+Cabecera (`presupuestos`) + líneas (`presupuesto_items`), columnas confirmadas por
+`information_schema.columns`. Puntos clave:
+
+- **`precio_total` y `costo_total_estimado` son columnas generadas** (cantidad ×
+  precio/costo unitario) — `NuevoPresupuestoItem` nunca las incluye en el payload de
+  insert/update, se calculan solas en la base.
+- **Los totales de cabecera salen de `v_presupuesto_totales`**, no se recalculan en
+  el frontend: Sub Total, IGV, Total, Costo Estimado, Costo Real, Utilidad Estimada,
+  Utilidad Real se muestran como KPIs en `PresupuestoDetalle.jsx`, una fila por
+  `presupuesto_id`.
+- **El margen por línea sale de `v_presupuesto_items_margen`**, no de
+  `presupuesto_items` directo — esa vista es la que lista los ítems en el detalle
+  (trae además `margen_estimado_monto/pct` y `margen_real_monto/pct`, ya protegidos
+  contra división por cero según dijiste). Editar/Borrar de un ítem sí opera sobre
+  `presupuesto_items` (la tabla base), la vista es solo para mostrar.
+- Selects filtrados por empresa: Proyecto, Deudor (`terceros` tipo deudor/ambos),
+  Ejecutivo y Productor (ambos asumidos como `responsables.nombre`, filtrado por
+  `cliente_id` — avisame si Ejecutivo/Productor deberían salir de una tabla
+  distinta a Responsable), Área y Sección (`secciones_presupuesto.nombre`). Tipo de
+  documento a emitir sale de `tipos_documento_facturacion` sin filtrar (catálogo
+  global, como `condiciones_pago` y `bancos`).
+- El número de ítem (`item_numero`) se sugiere automáticamente al crear uno nuevo
+  (máximo existente + 1 para ese presupuesto), pero queda editable por si hace falta
+  reordenar.
+- `estado` (en `presupuestos`) y `version` no se exponen en el formulario, quedan en
+  su default de la base — no había criterio claro para exponerlos todavía.

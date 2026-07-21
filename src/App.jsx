@@ -21,6 +21,10 @@ import CajaChica from './pages/CajaChica'
 import NuevaCaja from './pages/NuevaCaja'
 import CajaChicaMovimientos from './pages/CajaChicaMovimientos'
 import NuevoMovimientoCaja from './pages/NuevoMovimientoCaja'
+import Presupuestos from './pages/Presupuestos'
+import NuevoPresupuesto from './pages/NuevoPresupuesto'
+import PresupuestoDetalle from './pages/PresupuestoDetalle'
+import NuevoPresupuestoItem from './pages/NuevoPresupuestoItem'
 import Placeholder from './pages/Placeholder'
 
 function App() {
@@ -72,7 +76,18 @@ function App() {
             <Route path="clientes/nuevo" element={<NuevoCliente />} />
             <Route path="clientes/:id/editar" element={<NuevoCliente />} />
             <Route path="areas" element={<Placeholder titulo="Áreas" />} />
-            <Route path="presupuesto" element={<Placeholder titulo="Presupuesto" />} />
+            <Route path="presupuesto" element={<Presupuestos />} />
+            <Route path="presupuesto/nuevo" element={<NuevoPresupuesto />} />
+            <Route path="presupuesto/:id/editar" element={<NuevoPresupuesto />} />
+            <Route path="presupuesto/:presupuestoId/items" element={<PresupuestoDetalle />} />
+            <Route
+              path="presupuesto/:presupuestoId/items/nuevo"
+              element={<NuevoPresupuestoItem />}
+            />
+            <Route
+              path="presupuesto/:presupuestoId/items/:id/editar"
+              element={<NuevoPresupuestoItem />}
+            />
             <Route
               path="libros-electronicos"
               element={<Placeholder titulo="Libros Electrónicos" />}

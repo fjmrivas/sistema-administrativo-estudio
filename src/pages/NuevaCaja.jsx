@@ -117,6 +117,7 @@ export default function NuevaCaja() {
         <FormField label="Área">
           <CatalogoSelect
             tabla="areas"
+            filtro={{ cliente_id: empresaId }}
             value={form.area_id}
             onChange={(valor) => setForm((f) => ({ ...f, area_id: valor }))}
           />
@@ -125,6 +126,7 @@ export default function NuevaCaja() {
         <FormField label="Responsable">
           <CatalogoSelect
             tabla="responsables"
+            filtro={{ cliente_id: empresaId }}
             value={form.responsable_id}
             onChange={(valor) => setForm((f) => ({ ...f, responsable_id: valor }))}
           />
