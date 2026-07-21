@@ -20,8 +20,8 @@ barra superior; un usuario con `cliente_id` asignado ve solo su propia empresa.
 
 Construido:
 - Login contra Supabase Auth
-- Layout con sidebar (grupos General / Tesorería / Planeamiento / Cumplimiento SUNAT),
-  responsive (drawer en mobile)
+- Layout con sidebar (grupos General / Tesorería / Planeamiento / Cumplimiento
+  SUNAT / Maestros), responsive (drawer en mobile)
 - Selector de empresa para staff
 - Dashboard con KPIs de Por Cobrar, Por Pagar y Caja Chica
 - Cuentas por Cobrar (`facturas_venta.monto_total` / `saldo_pendiente`, + `cobranzas`),
@@ -42,8 +42,12 @@ Construido:
   alta/edición/borrado; cada uno abre su detalle de ítems
   (`/presupuesto/:presupuestoId/items`) con los totales de
   `v_presupuesto_totales` como KPIs y alta/edición/borrado de ítems
+- Maestros (grupo nuevo en el sidebar): Terceros, Ejecutivos, Productores, Áreas y
+  Secciones de Presupuesto — los 5 catálogos que alimentan los selects de FK del
+  resto de la app, mismo patrón lista + alta/edición/borrado filtrado por
+  `cliente_id`
 
-Pendiente (rutas ya creadas como placeholder "en construcción"): Áreas, Libros
+Pendiente (rutas ya creadas como placeholder "en construcción"): Libros
 Electrónicos, PDT.
 
 ## Nota sobre el esquema de datos
@@ -89,9 +93,12 @@ filas de la tabla indicada y arman la etiqueta probando `nombre` → `descripcio
   `tipo IN ('proveedor', 'ambos')`
 - Responsable (en Proyecto y Caja Chica) → `responsables.nombre`, filtrado por
   `cliente_id` de la empresa activa
-- Área (en Proyecto, Caja Chica y Presupuesto) → `areas`, filtrado por `cliente_id`
-  de la empresa activa, etiqueta por heurística (esquema no confirmado — si sale
-  fea, pasame las columnas de `areas`)
+- Área (en Proyecto, Caja Chica y Presupuesto) → `areas.nombre`, filtrado por
+  `cliente_id` de la empresa activa
+- Ejecutivo (en Presupuesto) → `ejecutivos.nombre`, filtrado por `cliente_id`
+- Productor (en Presupuesto) → `productores.nombre`, filtrado por `cliente_id`
+- Sección (en Presupuesto) → `secciones_presupuesto.nombre`, filtrado por
+  `cliente_id`
 
 `CatalogoSelect`/`useCatalogo` (`src/lib/catalogo.js`) soportan filtros `IN` pasando
 un array como valor del filtro (ej. `{ tipo: ['deudor', 'ambos'] }`).
@@ -196,3 +203,18 @@ Cabecera (`presupuestos`) + líneas (`presupuesto_items`), columnas confirmadas 
   demás estados (`cerrado`, `anulado`, `finalizado`, `contabilizado`) no tienen
   botones todavía — avisame si hace falta alguna transición más. Los botones están
   gateados por `isStaff`, igual que Editar/Borrar. `version` sigue sin exponerse.
+
+## Maestros
+
+Los 5 catálogos que llenan los selects de FK de toda la app, mismo patrón lista +
+alta/edición/borrado filtrado por `cliente_id` que el resto de los módulos:
+
+- **Terceros** (`/terceros`): `tipo` (proveedor / deudor ("Cliente Final") / ambos),
+  `razon_social`, `ruc`, `email`, `telefono`
+- **Ejecutivos** (`/ejecutivos`) y **Productores** (`/productores`): idénticos,
+  `nombre` + `activo` (checkbox)
+- **Áreas** (`/areas`, reemplaza el placeholder anterior): `nombre`, `descripcion`
+- **Secciones de Presupuesto** (`/secciones-presupuesto`): solo `nombre`
+
+Agrupados bajo un nuevo grupo "Maestros" en el sidebar (`Sidebar.jsx`) — Áreas se
+movió ahí desde el grupo General.

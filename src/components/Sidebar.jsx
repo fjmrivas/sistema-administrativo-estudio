@@ -7,7 +7,6 @@ const GRUPOS = [
       { to: '/', label: 'Inicio', end: true },
       { to: '/proyectos', label: 'Proyectos' },
       { to: '/clientes', label: 'Clientes' },
-      { to: '/areas', label: 'Áreas' },
     ],
   },
   {
@@ -28,6 +27,16 @@ const GRUPOS = [
     items: [
       { to: '/libros-electronicos', label: 'Libros Electrónicos' },
       { to: '/pdt', label: 'PDT' },
+    ],
+  },
+  {
+    titulo: 'Maestros',
+    items: [
+      { to: '/terceros', label: 'Terceros' },
+      { to: '/ejecutivos', label: 'Ejecutivos' },
+      { to: '/productores', label: 'Productores' },
+      { to: '/areas', label: 'Áreas' },
+      { to: '/secciones-presupuesto', label: 'Secciones de Presupuesto' },
     ],
   },
 ]

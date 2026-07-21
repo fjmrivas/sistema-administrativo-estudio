@@ -25,6 +25,16 @@ import Presupuestos from './pages/Presupuestos'
 import NuevoPresupuesto from './pages/NuevoPresupuesto'
 import PresupuestoDetalle from './pages/PresupuestoDetalle'
 import NuevoPresupuestoItem from './pages/NuevoPresupuestoItem'
+import Terceros from './pages/Terceros'
+import NuevoTercero from './pages/NuevoTercero'
+import Ejecutivos from './pages/Ejecutivos'
+import NuevoEjecutivo from './pages/NuevoEjecutivo'
+import Productores from './pages/Productores'
+import NuevoProductor from './pages/NuevoProductor'
+import Areas from './pages/Areas'
+import NuevaArea from './pages/NuevaArea'
+import SeccionesPresupuesto from './pages/SeccionesPresupuesto'
+import NuevaSeccionPresupuesto from './pages/NuevaSeccionPresupuesto'
 import Placeholder from './pages/Placeholder'
 
 function App() {
@@ -75,7 +85,27 @@ function App() {
             <Route path="clientes" element={<Clientes />} />
             <Route path="clientes/nuevo" element={<NuevoCliente />} />
             <Route path="clientes/:id/editar" element={<NuevoCliente />} />
-            <Route path="areas" element={<Placeholder titulo="Áreas" />} />
+            <Route path="areas" element={<Areas />} />
+            <Route path="areas/nueva" element={<NuevaArea />} />
+            <Route path="areas/:id/editar" element={<NuevaArea />} />
+            <Route path="terceros" element={<Terceros />} />
+            <Route path="terceros/nuevo" element={<NuevoTercero />} />
+            <Route path="terceros/:id/editar" element={<NuevoTercero />} />
+            <Route path="ejecutivos" element={<Ejecutivos />} />
+            <Route path="ejecutivos/nuevo" element={<NuevoEjecutivo />} />
+            <Route path="ejecutivos/:id/editar" element={<NuevoEjecutivo />} />
+            <Route path="productores" element={<Productores />} />
+            <Route path="productores/nuevo" element={<NuevoProductor />} />
+            <Route path="productores/:id/editar" element={<NuevoProductor />} />
+            <Route path="secciones-presupuesto" element={<SeccionesPresupuesto />} />
+            <Route
+              path="secciones-presupuesto/nueva"
+              element={<NuevaSeccionPresupuesto />}
+            />
+            <Route
+              path="secciones-presupuesto/:id/editar"
+              element={<NuevaSeccionPresupuesto />}
+            />
             <Route path="presupuesto" element={<Presupuestos />} />
             <Route path="presupuesto/nuevo" element={<NuevoPresupuesto />} />
             <Route path="presupuesto/:id/editar" element={<NuevoPresupuesto />} />
