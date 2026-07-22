@@ -569,3 +569,24 @@ Pendiente, tal como se acordó: el PDF de impresión con marca de agua, y la col
      mismo gate — un no-staff no gana una forma nueva de llegar a un formulario
      que antes no podía ni ver. "Tipos de Documento" (100% solo lectura, sin
      ruta de edición) no se tocó.
+
+## Consulta de RUC en Terceros
+
+Botón "Consultar RUC" en `NuevoTercero.jsx`, junto al campo RUC. Habilitado solo
+cuando el RUC tiene exactamente 11 dígitos (`/^\d{11}$/`). Al hacer click llama
+`supabase.functions.invoke('consultar-ruc', { body: { ruc: form.ruc } })` — la
+Edge Function ya existe en Supabase y devuelve
+`{ razon_social, direccion, estado, condicion }`.
+
+- **Autocompleta** `razon_social` y `direccion` en el formulario (sobrescribe lo
+  que hubiera escrito antes; sigue siendo editable a mano después).
+- **Muestra de solo lectura** `estado`/`condicion` (ej. "ACTIVO / HABIDO") en un
+  bloque debajo del botón — no se guardan en `terceros`, son solo para que el
+  usuario los vea al momento de completar el formulario.
+- Si el invoke devuelve error, se muestra `error.message` tal cual, sin
+  interceptarlo (mismo criterio que el resto de la app).
+- **`terceros.direccion` pasó a ser un campo editable del formulario** (antes
+  solo se leía/mostraba en Órdenes de Compra, pero no existía como input en
+  `NuevoTercero.jsx` — hacía falta para poder guardar el valor autocompletado
+  desde la consulta de RUC). Se agregó a `inicial`, al prefill de edición y al
+  payload de insert/update, como cualquier otro campo del formulario.

@@ -10,6 +10,7 @@ const inicial = {
   tipo: 'proveedor',
   razon_social: '',
   ruc: '',
+  direccion: '',
   email: '',
   telefono: '',
 }
@@ -23,8 +24,35 @@ export default function NuevoTercero() {
   const [cargandoRegistro, setCargandoRegistro] = useState(editando)
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const [consultandoRuc, setConsultandoRuc] = useState(false)
+  const [errorRuc, setErrorRuc] = useState(null)
+  const [rucInfo, setRucInfo] = useState(null)
 
   const set = (campo) => (e) => setForm((f) => ({ ...f, [campo]: e.target.value }))
+  const rucValido = /^\d{11}$/.test(form.ruc)
+
+  async function consultarRuc() {
+    setErrorRuc(null)
+    setRucInfo(null)
+    setConsultandoRuc(true)
+
+    const { data, error: err } = await supabase.functions.invoke('consultar-ruc', {
+      body: { ruc: form.ruc },
+    })
+
+    setConsultandoRuc(false)
+    if (err) {
+      setErrorRuc(err.message)
+      return
+    }
+
+    setForm((f) => ({
+      ...f,
+      razon_social: data?.razon_social || f.razon_social,
+      direccion: data?.direccion || f.direccion,
+    }))
+    setRucInfo({ estado: data?.estado ?? null, condicion: data?.condicion ?? null })
+  }
 
   useEffect(() => {
     if (!editando) return
@@ -43,6 +71,7 @@ export default function NuevoTercero() {
             tipo: data.tipo ?? 'proveedor',
             razon_social: data.razon_social ?? '',
             ruc: data.ruc ?? '',
+            direccion: data.direccion ?? '',
             email: data.email ?? '',
             telefono: data.telefono ?? '',
           })
@@ -83,6 +112,7 @@ export default function NuevoTercero() {
       tipo: form.tipo,
       razon_social: form.razon_social,
       ruc: form.ruc || null,
+      direccion: form.direccion || null,
       email: form.email || null,
       telefono: form.telefono || null,
     }
@@ -127,7 +157,43 @@ export default function NuevoTercero() {
         </FormField>
 
         <FormField label="RUC">
-          <input value={form.ruc} onChange={set('ruc')} maxLength={11} className={inputClass} />
+          <div className="flex gap-2">
+            <input
+              value={form.ruc}
+              onChange={set('ruc')}
+              maxLength={11}
+              className={inputClass}
+            />
+            <button
+              type="button"
+              onClick={consultarRuc}
+              disabled={!rucValido || consultandoRuc}
+              className="shrink-0 rounded-lg bg-violeta px-4 py-2 text-sm font-medium text-white hover:bg-violeta/90 disabled:opacity-50"
+            >
+              {consultandoRuc ? 'Consultando…' : 'Consultar RUC'}
+            </button>
+          </div>
+        </FormField>
+
+        {errorRuc && <p className="text-sm text-rojo">{errorRuc}</p>}
+
+        {rucInfo && (
+          <div className="rounded-lg bg-navy/5 p-3 text-sm text-navy/70">
+            <p>
+              Estado / Condición:{' '}
+              <span className="font-medium text-navy">
+                {rucInfo.estado ?? '—'} / {rucInfo.condicion ?? '—'}
+              </span>
+            </p>
+          </div>
+        )}
+
+        <FormField label="Dirección">
+          <input
+            value={form.direccion}
+            onChange={set('direccion')}
+            className={inputClass}
+          />
         </FormField>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
