@@ -286,12 +286,10 @@ el formulario antes de grabar nada:
   a `acciones` pero para la primera columna — no afecta ningún uso existente,
   es opt-in). Si hay líneas marcadas, "Generar Factura" usa solo esas; si no hay
   ninguna marcada, usa **todas** las líneas del presupuesto.
-- **Monto precargado** = suma de `precio_total + IGV` de las líneas relevantes,
-  donde el IGV de cada línea se calcula como `precio_total × (presupuesto.igv_porcentaje / 100)`
-  — no hay un campo de IGV por línea en `presupuesto_items`/`v_presupuesto_items_margen`,
-  así que se reutiliza el mismo porcentaje de la cabecera que ya usa
-  `v_presupuesto_totales` para el IGV total. **Avisame si el IGV por línea debería
-  salir de otro lado.**
+- **Monto precargado** = suma de `precio_total + igv` de las líneas relevantes,
+  tomando ambas columnas directo de `presupuesto_items` (vía
+  `v_presupuesto_items_margen`, que las expone igual que `precio_total`) — sin
+  recalcular con el `igv_porcentaje` de la cabecera, corregido según confirmaste.
 - **Deudor y Proyecto** precargados desde `presupuesto.deudor_id` / `proyecto_id`.
 - **Tipo de documento**: se busca el `nombre` de `presupuesto.tipo_doc_emitir_id`
   (tabla `tipos_documento_facturacion`) y se intenta hacer matching exacto

@@ -148,10 +148,9 @@ export default function PresupuestoDetalle() {
     const relevantes =
       seleccionados.size > 0 ? items.filter((it) => seleccionados.has(it.id)) : items
 
-    const igvPorcentaje = Number(presupuesto?.igv_porcentaje) || 0
     const itemsFactura = relevantes.map((it) => {
       const base = Number(it.precio_total) || 0
-      const igv = base * (igvPorcentaje / 100)
+      const igv = Number(it.igv) || 0
       return { presupuesto_item_id: it.id, monto: Number((base + igv).toFixed(2)) }
     })
     const montoTotal = itemsFactura.reduce((acc, it) => acc + it.monto, 0)
