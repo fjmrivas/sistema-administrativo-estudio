@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useEmpresa } from '../context/EmpresaContext'
@@ -11,8 +11,17 @@ import { formatoMoneda, formatoFecha, formatoFechaHora } from '../lib/format'
 import { useMapaNombres, resolverFilas } from '../lib/relaciones'
 import { COLOR_ESTADO, ETIQUETA_ESTADO } from '../lib/estadoDocumento'
 
+const OPCIONES_TIPO_DOC = ['Factura', 'Boleta', 'Nota de Crédito', 'Nota de Débito']
+
+function mapearTipoDoc(nombreTipoDoc) {
+  if (!nombreTipoDoc) return undefined
+  const normalizado = nombreTipoDoc.trim().toLowerCase()
+  return OPCIONES_TIPO_DOC.find((opcion) => opcion.toLowerCase() === normalizado)
+}
+
 export default function PresupuestoDetalle() {
   const { presupuestoId } = useParams()
+  const navigate = useNavigate()
   const { isStaff } = useAuth()
   const { empresaId } = useEmpresa()
   const [presupuesto, setPresupuesto] = useState(null)
@@ -20,12 +29,15 @@ export default function PresupuestoDetalle() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [generando, setGenerando] = useState(false)
-  const [facturaGenerada, setFacturaGenerada] = useState(null)
+  const [seleccionados, setSeleccionados] = useState(() => new Set())
+  const [mapaSaldoFacturar, setMapaSaldoFacturar] = useState(() => new Map())
 
   const mapaProveedores = useMapaNombres('terceros', 'razon_social', { cliente_id: empresaId })
   const mapaSecciones = useMapaNombres('secciones_presupuesto', 'nombre', { cliente_id: empresaId })
   const mapaUsuarios = useMapaNombres('usuarios', 'nombre')
+  const mapaTiposDocumento = useMapaNombres('tipos_documento_facturacion', 'nombre')
+
+  const moneda = presupuesto?.moneda ?? 'PEN'
 
   const itemsResueltos = useMemo(
     () =>
@@ -37,13 +49,30 @@ export default function PresupuestoDetalle() {
         ],
         // costo_real: valor manual antiguo, ambiguo frente a costo_real_calculado
         ['presupuesto_id', 'costo_real']
-      ),
-    [items, mapaProveedores, mapaSecciones]
+      ).map((fila) => ({
+        ...fila,
+        saldo_por_facturar: mapaSaldoFacturar.get(fila.id) ?? null,
+      })),
+    [items, mapaProveedores, mapaSecciones, mapaSaldoFacturar]
   )
 
   const ITEMS_TITULOS = {
     costo_real_calculado: 'Costo Real',
     margen_real_monto: 'Margen Real',
+    saldo_por_facturar: 'Saldo x Facturar',
+  }
+
+  const ITEMS_RENDERIZADORES = {
+    saldo_por_facturar: (valor) => formatoMoneda(valor, moneda),
+  }
+
+  function toggleSeleccion(itemId) {
+    setSeleccionados((prev) => {
+      const next = new Set(prev)
+      if (next.has(itemId)) next.delete(itemId)
+      else next.add(itemId)
+      return next
+    })
   }
 
   useEffect(() => {
@@ -77,6 +106,32 @@ export default function PresupuestoDetalle() {
     }
   }, [presupuestoId])
 
+  useEffect(() => {
+    if (items.length === 0) {
+      setMapaSaldoFacturar(new Map())
+      return
+    }
+    let cancelled = false
+
+    supabase
+      .from('v_presupuesto_items_facturacion')
+      .select('presupuesto_item_id, saldo_por_facturar')
+      .in(
+        'presupuesto_item_id',
+        items.map((it) => it.id)
+      )
+      .then(({ data }) => {
+        if (cancelled) return
+        setMapaSaldoFacturar(
+          new Map((data ?? []).map((fila) => [fila.presupuesto_item_id, fila.saldo_por_facturar]))
+        )
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [items])
+
   async function cambiarEstado(nuevoEstado) {
     const { error: err } = await supabase
       .from('presupuestos')
@@ -89,20 +144,28 @@ export default function PresupuestoDetalle() {
     setPresupuesto((prev) => (prev ? { ...prev, estado: nuevoEstado } : prev))
   }
 
-  async function generarFactura() {
-    setError(null)
-    setGenerando(true)
+  function irAGenerarFactura() {
+    const relevantes =
+      seleccionados.size > 0 ? items.filter((it) => seleccionados.has(it.id)) : items
 
-    const { data, error: err } = await supabase.rpc('generar_factura_desde_presupuesto', {
-      presupuesto_id: presupuestoId,
+    const igvPorcentaje = Number(presupuesto?.igv_porcentaje) || 0
+    const itemsFactura = relevantes.map((it) => {
+      const base = Number(it.precio_total) || 0
+      const igv = base * (igvPorcentaje / 100)
+      return { presupuesto_item_id: it.id, monto: Number((base + igv).toFixed(2)) }
     })
+    const montoTotal = itemsFactura.reduce((acc, it) => acc + it.monto, 0)
 
-    setGenerando(false)
-    if (err) {
-      setError(err.message)
-      return
-    }
-    setFacturaGenerada(data)
+    navigate('/cuentas-por-cobrar/nueva', {
+      state: {
+        deudor_id: presupuesto?.deudor_id ?? null,
+        proyecto_id: presupuesto?.proyecto_id ?? null,
+        moneda: presupuesto?.moneda ?? 'PEN',
+        tipo_doc: mapearTipoDoc(mapaTiposDocumento.get(presupuesto?.tipo_doc_emitir_id)),
+        monto_total: montoTotal.toFixed(2),
+        itemsFactura,
+      },
+    })
   }
 
   async function borrarItem(id) {
@@ -119,8 +182,6 @@ export default function PresupuestoDetalle() {
   if (loading) {
     return <p className="py-8 text-center text-sm text-navy/50">Cargando…</p>
   }
-
-  const moneda = presupuesto?.moneda ?? 'PEN'
 
   const estado = presupuesto?.estado
 
@@ -211,27 +272,14 @@ export default function PresupuestoDetalle() {
             </button>
             <button
               type="button"
-              onClick={generarFactura}
-              disabled={generando}
-              className="rounded-lg bg-teal px-3 py-1.5 text-sm font-medium text-white hover:bg-teal/90 disabled:opacity-60"
+              onClick={irAGenerarFactura}
+              className="rounded-lg bg-teal px-3 py-1.5 text-sm font-medium text-white hover:bg-teal/90"
             >
-              {generando ? 'Generando…' : 'Generar Factura'}
+              Generar Factura
             </button>
           </div>
         )}
       </div>
-
-      {facturaGenerada && (
-        <p className="mb-4 rounded-lg bg-teal/10 px-4 py-3 text-sm text-teal">
-          Factura generada correctamente.{' '}
-          <Link
-            to={`/cuentas-por-cobrar/${facturaGenerada}/editar`}
-            className="font-medium underline"
-          >
-            Ver factura →
-          </Link>
-        </p>
-      )}
 
       {error && <p className="mb-4 text-sm text-rojo">Error: {error}</p>}
 
@@ -258,14 +306,32 @@ export default function PresupuestoDetalle() {
       <DataTable
         filas={itemsResueltos}
         titulos={ITEMS_TITULOS}
+        renderizadores={ITEMS_RENDERIZADORES}
         vacio="No hay ítems registrados en este presupuesto."
+        accionesInicio={(fila) => (
+          <input
+            type="checkbox"
+            checked={seleccionados.has(fila.id)}
+            onChange={() => toggleSeleccion(fila.id)}
+            className="h-4 w-4 rounded border-navy/25 text-violeta focus:ring-violeta/30"
+          />
+        )}
         acciones={
           isStaff
             ? (fila) => (
-                <AccionesFila
-                  editarTo={`/presupuesto/${presupuestoId}/items/${fila.id}/editar`}
-                  onBorrar={() => borrarItem(fila.id)}
-                />
+                <div className="flex items-center justify-end gap-3 text-sm">
+                  <Link
+                    to="/ordenes-compra/nueva"
+                    state={{ presupuestoId, presupuestoItemId: fila.id }}
+                    className="font-medium text-teal hover:underline"
+                  >
+                    Generar OC
+                  </Link>
+                  <AccionesFila
+                    editarTo={`/presupuesto/${presupuestoId}/items/${fila.id}/editar`}
+                    onBorrar={() => borrarItem(fila.id)}
+                  />
+                </div>
               )
             : undefined
         }

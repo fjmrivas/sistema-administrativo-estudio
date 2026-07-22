@@ -14,7 +14,15 @@ function tituloColumna(campo) {
   return campo.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
-export function DataTable({ filas, columnas, vacio = 'Sin registros.', acciones, titulos, renderizadores }) {
+export function DataTable({
+  filas,
+  columnas,
+  vacio = 'Sin registros.',
+  acciones,
+  accionesInicio,
+  titulos,
+  renderizadores,
+}) {
   if (!filas || filas.length === 0) {
     return <p className="py-8 text-center text-sm text-navy/50">{vacio}</p>
   }
@@ -26,6 +34,7 @@ export function DataTable({ filas, columnas, vacio = 'Sin registros.', acciones,
       <table className="w-full min-w-max text-left text-sm">
         <thead>
           <tr className="border-b border-navy/10 bg-navy/[0.03]">
+            {accionesInicio && <th className="whitespace-nowrap px-4 py-3" />}
             {cols.map((col) => (
               <th key={col} className="whitespace-nowrap px-4 py-3 font-semibold text-navy/70">
                 {titulos?.[col] ?? tituloColumna(col)}
@@ -37,6 +46,9 @@ export function DataTable({ filas, columnas, vacio = 'Sin registros.', acciones,
         <tbody>
           {filas.map((fila, i) => (
             <tr key={fila.id ?? i} className="border-b border-navy/5 last:border-0 hover:bg-navy/[0.02]">
+              {accionesInicio && (
+                <td className="whitespace-nowrap px-4 py-3">{accionesInicio(fila)}</td>
+              )}
               {cols.map((col) => (
                 <td key={col} className="whitespace-nowrap px-4 py-3 text-navy/90">
                   {renderizadores?.[col]

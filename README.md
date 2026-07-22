@@ -274,23 +274,47 @@ columna explícita con formato a medida.
 
 ## Generar Factura desde Presupuesto
 
-Botón "Generar Factura" en `PresupuestoDetalle.jsx`, visible solo cuando
-`isStaff` y el presupuesto está `aprobado` (al lado de "Cerrar"). Llama al RPC
-`supabase.rpc('generar_factura_desde_presupuesto', { presupuesto_id: presupuestoId })`.
+**Cambio de enfoque**: el botón "Generar Factura" en `PresupuestoDetalle.jsx`
+(visible con `isStaff` y `estado='aprobado'`, junto a "Cerrar" y "Desaprobar") ya
+**no** llama al RPC `generar_factura_desde_presupuesto` — ese RPC quedó sin uso.
+Ahora arma los valores precargados y navega a `/cuentas-por-cobrar/nueva` (`Link`
+de React Router con `state`, sin query params) dejando que completes y confirmes
+el formulario antes de grabar nada:
 
-El nombre del parámetro (`presupuesto_id`) está confirmado — Francisco ajustó la
-función en Supabase para que coincida con lo que ya mandaba el frontend.
-
-Al generar la factura correctamente, se asume que el RPC devuelve el `id` (uuid) de
-la factura creada como valor escalar — se muestra un mensaje de éxito con un link a
-`/cuentas-por-cobrar/:id/editar` (no hay una vista de detalle de una sola factura
-todavía, así que se reusa el formulario de edición para verla). Si el RPC devuelve
-otra forma de dato (por ejemplo un objeto en vez de un uuid plano), el link va a
-salir roto — avisame si es el caso.
-
-También se agregó el botón "Desaprobar" (visible cuando `estado='aprobado'`, junto
-a "Cerrar" y "Generar Factura") — hace `update` directo a `estado='registro'`,
-mismo patrón que los otros botones de transición.
+- **Selección de líneas**: la tabla de ítems tiene una columna de checkbox a la
+  izquierda (`DataTable` ahora soporta `accionesInicio`, un render-prop simétrico
+  a `acciones` pero para la primera columna — no afecta ningún uso existente,
+  es opt-in). Si hay líneas marcadas, "Generar Factura" usa solo esas; si no hay
+  ninguna marcada, usa **todas** las líneas del presupuesto.
+- **Monto precargado** = suma de `precio_total + IGV` de las líneas relevantes,
+  donde el IGV de cada línea se calcula como `precio_total × (presupuesto.igv_porcentaje / 100)`
+  — no hay un campo de IGV por línea en `presupuesto_items`/`v_presupuesto_items_margen`,
+  así que se reutiliza el mismo porcentaje de la cabecera que ya usa
+  `v_presupuesto_totales` para el IGV total. **Avisame si el IGV por línea debería
+  salir de otro lado.**
+- **Deudor y Proyecto** precargados desde `presupuesto.deudor_id` / `proyecto_id`.
+- **Tipo de documento**: se busca el `nombre` de `presupuesto.tipo_doc_emitir_id`
+  (tabla `tipos_documento_facturacion`) y se intenta hacer matching exacto
+  (sin distinguir mayúsculas) contra las 4 opciones fijas del select de Factura
+  (`Factura` / `Boleta` / `Nota de Crédito` / `Nota de Débito`). Si no hay
+  coincidencia exacta, el campo queda en su default ("Factura") y lo tenés que
+  ajustar a mano — **`facturas_venta.tipo_doc` es texto libre con esas 4 opciones,
+  no una FK al catálogo SUNAT de `tipos_documento_facturacion`**, así que no
+  siempre hay una correspondencia 1 a 1 (por ejemplo, un tipo de documento con
+  código de Recibo por Honorarios no matchea ninguna opción).
+- Al confirmar el formulario de "Nueva Factura" (`NuevaFactura.jsx`), además de
+  crear la fila en `facturas_venta`, si venís desde este flujo se inserta una fila
+  en **`factura_presupuesto_items`** por cada línea seleccionada, con
+  `factura_id` (la factura recién creada), `presupuesto_item_id` y `monto` (el
+  mismo `precio_total + IGV` calculado antes). **Los nombres de columna de
+  `factura_presupuesto_items` son una suposición — no tengo el
+  `information_schema.columns` de esa tabla.** Si no coinciden, el guardado de la
+  factura en sí funciona igual (ya se insertó antes), pero este segundo insert va
+  a fallar y te va a mostrar el error de Postgres tal cual. Pasame el esquema de
+  esa tabla y lo ajusto.
+- El flujo por RPC anterior (con el link "Ver factura →" a partir del uuid que
+  devolvía la función) se eliminó por completo, ya no queda código muerto de esa
+  versión.
 
 ## Lista de Presupuesto: `v_presupuestos_resumen`
 
@@ -349,6 +373,33 @@ Editar/Borrar de un presupuesto individual siguen apuntando a la tabla
   nuevo helper `formatoFechaHora` en `src/lib/format.js`) se muestran de solo
   lectura en el detalle, solo cuando existen.
 
+## Ajustes de detalle en Presupuesto (tercera vuelta)
+
+- **Selección múltiple**: columna de checkbox a la izquierda de cada línea, vía un
+  nuevo prop `accionesInicio` en `DataTable` (`src/components/DataTable.jsx`) —
+  render-prop simétrico a `acciones` pero para la primera columna en vez de la
+  última; opt-in, no afecta ningún uso existente de `DataTable`. Vive en
+  `PresupuestoDetalle.jsx` como
+  un `Set` de ids de `presupuesto_items`; se usa tanto para "Generar Factura"
+  (ver esa sección) como potencial base para otras acciones masivas a futuro.
+- **Botón "Generar OC" por línea**: cada fila del detalle tiene, junto a
+  Editar/Borrar (gateado por `isStaff`, mismo criterio), un link "Generar OC" que
+  navega a `/ordenes-compra/nueva` con `state={{ presupuestoId, presupuestoItemId: fila.id }}`
+  (React Router `state`, no query params). `OrdenCompraDetalle.jsx` usa ese
+  estado para: (1) precargar el select de Presupuesto en el formulario de alta,
+  y (2) una vez grabada la cabecera de la OC, saltar automáticamente al tab
+  "Detalle de Artículos" con el mini-formulario de agregar ítem ya abierto y con
+  esa línea del presupuesto preseleccionada — el usuario solo tiene que revisar/
+  completar Cantidad, Precio, Inafecto y Retención y grabar. El resto de los
+  datos de la cabecera (Proveedor, Fecha, Documento, etc.) los sigue completando
+  a mano, no hay forma de inferirlos desde una línea de presupuesto.
+- **Columna "Saldo x Facturar"**: se agregó al final de la tabla de ítems,
+  leyendo `saldo_por_facturar` de la vista `v_presupuesto_items_facturacion`
+  (join por `presupuesto_item_id`, con `.in()` sobre los ids de los ítems ya
+  cargados — no se asumió que la vista tenga una columna `presupuesto_id` propia
+  para filtrar directo). Formateada como moneda con la moneda del presupuesto,
+  igual que el resto de columnas de importe.
+
 ## Órdenes de Compra (módulo completo)
 
 Reemplaza el botón simple "Generar OC" que se había armado antes (se borró
@@ -396,6 +447,18 @@ necesita un `orden_compra_id` real):
 - Botón **Aprobar** (visible con `isStaff` y `estado='registro'`): `update` directo
   a `estado='aprobado'`, `fecha_aprobacion` = hoy, `usuario_aprobador_id` =
   `perfil.id` — sin trigger en la base todavía, tal como se pidió.
+- Botón **Desaprobar** (visible con `isStaff` y `estado='aprobado'`, junto al
+  bloque "Aprobada el... por..."): `update` directo a `estado='registro'`, sin
+  tocar `fecha_aprobacion`/`usuario_aprobador_id` — mismo patrón que el botón
+  "Desaprobar" de `PresupuestoDetalle.jsx`. Con esto la OC vuelve a `registro` y
+  ahí sí quedan disponibles de nuevo Anular/Eliminar (los botones que ya existían
+  en `OrdenesCompra.jsx`, gateados igual por `estado='registro'`) y el tab de
+  Detalle de Artículos vuelve a ser editable.
+- Preselección desde Presupuesto: si se llega a `/ordenes-compra/nueva` con
+  `state={{ presupuestoId, presupuestoItemId }}` (desde el botón "Generar OC" de
+  `PresupuestoDetalle.jsx`), el select de Presupuesto arranca precargado y, apenas
+  se graba la cabecera, la pantalla salta sola al tab de artículos con esa línea
+  del presupuesto ya elegida en el mini-formulario de agregar.
 - Tab **Detalle de Artículos**: botón "+ Agregar" abre un mini-formulario inline
   (no una ruta separada, para compartir estado con la página padre sin
   complicarlo) con un select de líneas de `presupuesto_items` del presupuesto

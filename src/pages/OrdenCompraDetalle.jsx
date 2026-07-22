@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useEmpresa } from '../context/EmpresaContext'
@@ -37,12 +37,18 @@ const itemInicial = {
 
 export default function OrdenCompraDetalle() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { id } = useParams()
   const editando = Boolean(id)
   const { empresaId, loading: empresaLoading, isStaff, error: empresaError } = useEmpresa()
   const { perfil } = useAuth()
+  const itemPreseleccionadoAplicado = useRef(false)
 
-  const [form, setForm] = useState(inicial)
+  const [form, setForm] = useState(() =>
+    !editando && location.state?.presupuestoId
+      ? { ...inicial, presupuesto_id: location.state.presupuestoId }
+      : inicial
+  )
   const [orden, setOrden] = useState(null)
   const [presupuestoInfo, setPresupuestoInfo] = useState(null)
   const [proveedorInfo, setProveedorInfo] = useState(null)
@@ -178,6 +184,19 @@ export default function OrdenCompraDetalle() {
     }
   }, [editando, id, form.presupuesto_id])
 
+  useEffect(() => {
+    if (!editando) return
+    if (itemPreseleccionadoAplicado.current) return
+    if (!location.state?.presupuestoItemId) return
+    if (presupuestoItems.length === 0) return
+
+    itemPreseleccionadoAplicado.current = true
+    elegirItemPresupuesto(location.state.presupuestoItemId)
+    setTab('items')
+    setAgregando(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editando, presupuestoItems, location.state])
+
   if (empresaLoading) {
     return <p className="py-8 text-center text-sm text-navy/50">Cargando empresa…</p>
   }
@@ -237,7 +256,24 @@ export default function OrdenCompraDetalle() {
       setError(err.message)
       return
     }
-    navigate(`/ordenes-compra/${data.id}`)
+    navigate(`/ordenes-compra/${data.id}`, {
+      state: location.state?.presupuestoItemId
+        ? { presupuestoItemId: location.state.presupuestoItemId }
+        : undefined,
+    })
+  }
+
+  async function desaprobar() {
+    setError(null)
+    const { error: err } = await supabase
+      .from('ordenes_compra')
+      .update({ estado: 'registro' })
+      .eq('id', id)
+    if (err) {
+      setError(err.message)
+      return
+    }
+    setOrden((prev) => (prev ? { ...prev, estado: 'registro' } : prev))
   }
 
   async function aprobar() {
@@ -397,6 +433,15 @@ export default function OrdenCompraDetalle() {
               className="rounded-lg bg-teal px-3 py-1.5 text-sm font-medium text-white hover:bg-teal/90"
             >
               Aprobar
+            </button>
+          )}
+          {isStaff && estado === 'aprobado' && (
+            <button
+              type="button"
+              onClick={desaprobar}
+              className="rounded-lg px-3 py-1.5 text-sm font-medium text-navy/70 hover:bg-navy/5"
+            >
+              Desaprobar
             </button>
           )}
         </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
 import { FormField, inputClass } from '../components/FormField'
@@ -23,10 +23,23 @@ const inicial = {
 
 export default function NuevaFactura() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { id } = useParams()
   const editando = Boolean(id)
   const { empresaId, loading: empresaLoading, isStaff, error: empresaError } = useEmpresa()
-  const [form, setForm] = useState(inicial)
+  const desdePresupuesto = !editando ? location.state : null
+  const [form, setForm] = useState(() => {
+    if (!desdePresupuesto) return inicial
+    return {
+      ...inicial,
+      tipo_doc: desdePresupuesto.tipo_doc ?? inicial.tipo_doc,
+      moneda: desdePresupuesto.moneda ?? inicial.moneda,
+      monto_total: desdePresupuesto.monto_total ?? inicial.monto_total,
+      saldo_pendiente: desdePresupuesto.monto_total ?? inicial.saldo_pendiente,
+      proyecto_id: desdePresupuesto.proyecto_id ?? null,
+      deudor_id: desdePresupuesto.deudor_id ?? null,
+    }
+  })
   const [cargandoRegistro, setCargandoRegistro] = useState(editando)
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
@@ -111,15 +124,48 @@ export default function NuevaFactura() {
     }
     if (!editando) payload.cliente_id = empresaId
 
-    const { error: err } = editando
-      ? await supabase.from('facturas_venta').update(payload).eq('id', id)
-      : await supabase.from('facturas_venta').insert(payload)
+    if (editando) {
+      const { error: err } = await supabase.from('facturas_venta').update(payload).eq('id', id)
+      setSubmitting(false)
+      if (err) {
+        setError(err.message)
+        return
+      }
+      navigate('/cuentas-por-cobrar')
+      return
+    }
 
-    setSubmitting(false)
+    const { data, error: err } = await supabase
+      .from('facturas_venta')
+      .insert(payload)
+      .select('id')
+      .single()
+
     if (err) {
+      setSubmitting(false)
       setError(err.message)
       return
     }
+
+    if (desdePresupuesto?.itemsFactura?.length) {
+      const filasFacturaItems = desdePresupuesto.itemsFactura.map((it) => ({
+        factura_id: data.id,
+        presupuesto_item_id: it.presupuesto_item_id,
+        monto: it.monto,
+      }))
+      const { error: errItems } = await supabase
+        .from('factura_presupuesto_items')
+        .insert(filasFacturaItems)
+
+      setSubmitting(false)
+      if (errItems) {
+        setError(errItems.message)
+        return
+      }
+    } else {
+      setSubmitting(false)
+    }
+
     navigate('/cuentas-por-cobrar')
   }
 
