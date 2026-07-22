@@ -265,9 +265,12 @@ Caja Chica (área, responsable) y sus movimientos (proyecto), e ítems de presup
 
 De paso, `DataTable` ahora excluye `cliente_id` del render genérico por defecto
 (igual que ya excluía `id`) — es redundante en cualquier lista de esta app, porque
-siempre está filtrada a una sola empresa. La única excepción es Presupuestos, donde
-se resuelve explícitamente a `clientes.razon_social` bajo la clave `cliente` (no
-choca con el filtro porque ya no se llama `cliente_id`).
+siempre está filtrada a una sola empresa.
+
+**Actualización**: la lista de Presupuesto ya no usa el render genérico de
+`DataTable` (columnas automáticas a partir de las keys de la fila) — ver la
+sección "Lista de Presupuesto" más abajo, que reemplazó ese enfoque por una
+columna explícita con formato a medida.
 
 ## Generar Factura desde Presupuesto
 
@@ -275,12 +278,8 @@ Botón "Generar Factura" en `PresupuestoDetalle.jsx`, visible solo cuando
 `isStaff` y el presupuesto está `aprobado` (al lado de "Cerrar"). Llama al RPC
 `supabase.rpc('generar_factura_desde_presupuesto', { presupuesto_id: presupuestoId })`.
 
-**Asunción sin confirmar**: el nombre del parámetro del RPC es `presupuesto_id` — es
-el nombre de columna que se usa consistentemente en todo este esquema
-(`presupuesto_items.presupuesto_id`, las dos vistas, etc.), así que es la apuesta
-más razonable, pero no se pudo confirmar la firma real de la función sin acceso a
-la base. Si el RPC devuelve un error de parámetro no encontrado, decime el nombre
-exacto y lo ajusto.
+El nombre del parámetro (`presupuesto_id`) está confirmado — Francisco ajustó la
+función en Supabase para que coincida con lo que ya mandaba el frontend.
 
 Al generar la factura correctamente, se asume que el RPC devuelve el `id` (uuid) de
 la factura creada como valor escalar — se muestra un mensaje de éxito con un link a
@@ -288,3 +287,69 @@ la factura creada como valor escalar — se muestra un mensaje de éxito con un 
 todavía, así que se reusa el formulario de edición para verla). Si el RPC devuelve
 otra forma de dato (por ejemplo un objeto en vez de un uuid plano), el link va a
 salir roto — avisame si es el caso.
+
+También se agregó el botón "Desaprobar" (visible cuando `estado='aprobado'`, junto
+a "Cerrar" y "Generar Factura") — hace `update` directo a `estado='registro'`,
+mismo patrón que los otros botones de transición.
+
+## Lista de Presupuesto: `v_presupuestos_resumen`
+
+La lista de `/presupuesto` (`Presupuestos.jsx`) dejó de leer de la tabla
+`presupuestos` y ahora lee de la vista `v_presupuestos_resumen`, con exactamente
+las 18 columnas pedidas, en este orden: Situación, Periodo, Número, Fecha, Fecha de
+Aprobación, Cod. Aprobación, Proyecto, Cliente Final, Nombre del Presupuesto,
+Importe, Costo Real, %, Importe Facturado, Ejecutivo, Productor, N° Factura,
+Cobrado, Fecha de Cobro.
+
+Como el conjunto de columnas y el formato de cada una es muy específico (no es "lo
+que devuelva la tabla" como en el resto de la app), esta lista dejó de usar el
+render 100% genérico de `DataTable` y ahora pasa explícitamente:
+
+- `columnas`: el array con el orden exacto pedido
+- `titulos`: mapa de `campo → etiqueta`, para los casos donde el título automático
+  (`tituloColumna`, que solo separa `_` y capitaliza) no alcanza — acentos y
+  abreviaturas como "Cod. Aprobación" o "%" no salen bien de un nombre de columna
+  en snake_case sin acentos
+- `renderizadores`: mapa de `campo → (valor, fila) => JSX` para casos que el
+  formateo automático de `DataTable` no cubre:
+  - `estado` → el mismo badge de color que ya se usaba en el detalle
+    (`COLOR_ESTADO`/`ETIQUETA_ESTADO`, ahora en `src/lib/estadoDocumento.js` para
+    compartirlo entre `Presupuestos.jsx` y `PresupuestoDetalle.jsx`)
+  - `importe`, `costo_real`, `importe_facturado` → `formatoMoneda` usando la
+    **moneda de cada fila** (`fila.moneda`), porque el formateo automático de
+    `DataTable` siempre asume PEN
+  - `porcentaje_margen` → texto con `%` (`XX.XX%`)
+  - `cobrado` → un `<input type="checkbox" disabled>` en vez de "Sí"/"No" — es de
+    **solo lectura**: la vista no es escribible directamente y el estado real de
+    cobro debería salir de las `cobranzas` asociadas a la factura, así que no se
+    intentó hacerlo un toggle editable. Avisame si en realidad lo necesitás
+    interactivo y de dónde tendría que salir el update.
+
+`DataTable` (`src/components/DataTable.jsx`) ahora acepta `titulos` y
+`renderizadores` como props opcionales — no rompe ningún uso existente en el
+resto de la app, que sigue con el render 100% automático.
+
+Editar/Borrar de un presupuesto individual siguen apuntando a la tabla
+`presupuestos` (no a la vista), igual que ya pasaba con obligaciones/
+`v_obligaciones_situacion` — la vista es solo para leer la lista.
+
+## Órdenes de Compra
+
+Tabla `ordenes_compra`, columnas confirmadas por `information_schema.columns`.
+Botón "Generar OC" en cada línea de ítem del detalle de presupuesto
+(`PresupuestoDetalle.jsx`, junto a Editar/Borrar) — a diferencia de Editar/Borrar,
+**no** está gateado por `isStaff`, para seguir el mismo criterio que el resto de
+los botones "+ Nuevo" de la app (la seguridad real la da la RLS, no un chequeo de
+rol en el frontend).
+
+Abre `NuevaOrdenCompra.jsx` (`/presupuesto/:presupuestoId/items/:itemId/oc/nueva`),
+formulario simple: Proveedor (`terceros` filtrado por `tipo IN ('proveedor',
+'ambos')`), Concepto, Fecha (default hoy), Moneda, Monto. `presupuesto_item_id` se
+fija desde el `:itemId` de la URL — no es un campo del formulario. `numero` y
+`estado` no se envían nunca (se autogeneran en la base, mismo patrón que
+`presupuestos.numero`).
+
+Si el insert falla — por ejemplo si hay un trigger que valida que la OC no exceda
+el tope de costo estimado del ítem — el mensaje de error de Postgres se muestra tal
+cual, sin interceptarlo ni reformatearlo (mismo `setError(err.message)` que usa
+toda la app).

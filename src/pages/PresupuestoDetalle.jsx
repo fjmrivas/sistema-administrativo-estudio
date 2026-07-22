@@ -9,24 +9,7 @@ import { AccionesFila } from '../components/AccionesFila'
 import { KpiCard } from '../components/KpiCard'
 import { formatoMoneda, formatoFecha } from '../lib/format'
 import { useMapaNombres, resolverFilas } from '../lib/relaciones'
-
-const COLOR_ESTADO = {
-  registro: 'bg-navy/10 text-navy',
-  aprobado: 'bg-teal/10 text-teal',
-  cerrado: 'bg-violeta/10 text-violeta',
-  anulado: 'bg-rojo/10 text-rojo',
-  finalizado: 'bg-teal/10 text-teal',
-  contabilizado: 'bg-violeta/10 text-violeta',
-}
-
-const ETIQUETA_ESTADO = {
-  registro: 'Registro',
-  aprobado: 'Aprobado',
-  cerrado: 'Cerrado',
-  anulado: 'Anulado',
-  finalizado: 'Finalizado',
-  contabilizado: 'Contabilizado',
-}
+import { COLOR_ESTADO, ETIQUETA_ESTADO } from '../lib/estadoDocumento'
 
 export default function PresupuestoDetalle() {
   const { presupuestoId } = useParams()
@@ -252,16 +235,22 @@ export default function PresupuestoDetalle() {
       <DataTable
         filas={itemsResueltos}
         vacio="No hay ítems registrados en este presupuesto."
-        acciones={
-          isStaff
-            ? (fila) => (
-                <AccionesFila
-                  editarTo={`/presupuesto/${presupuestoId}/items/${fila.id}/editar`}
-                  onBorrar={() => borrarItem(fila.id)}
-                />
-              )
-            : undefined
-        }
+        acciones={(fila) => (
+          <div className="flex items-center justify-end gap-3 text-sm">
+            <Link
+              to={`/presupuesto/${presupuestoId}/items/${fila.id}/oc/nueva`}
+              className="font-medium text-violeta hover:underline"
+            >
+              Generar OC
+            </Link>
+            {isStaff && (
+              <AccionesFila
+                editarTo={`/presupuesto/${presupuestoId}/items/${fila.id}/editar`}
+                onBorrar={() => borrarItem(fila.id)}
+              />
+            )}
+          </div>
+        )}
       />
     </div>
   )

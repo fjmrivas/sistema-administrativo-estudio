@@ -25,6 +25,7 @@ import Presupuestos from './pages/Presupuestos'
 import NuevoPresupuesto from './pages/NuevoPresupuesto'
 import PresupuestoDetalle from './pages/PresupuestoDetalle'
 import NuevoPresupuestoItem from './pages/NuevoPresupuestoItem'
+import NuevaOrdenCompra from './pages/NuevaOrdenCompra'
 import Terceros from './pages/Terceros'
 import NuevoTercero from './pages/NuevoTercero'
 import Ejecutivos from './pages/Ejecutivos'
@@ -119,6 +120,10 @@ function App() {
             <Route
               path="presupuesto/:presupuestoId/items/:id/editar"
               element={<NuevoPresupuestoItem />}
+            />
+            <Route
+              path="presupuesto/:presupuestoId/items/:itemId/oc/nueva"
+              element={<NuevaOrdenCompra />}
             />
             <Route
               path="libros-electronicos"
