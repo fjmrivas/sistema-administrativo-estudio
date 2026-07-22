@@ -33,6 +33,7 @@ const itemInicial = {
   precio: '0',
   inafecto: '0',
   retencion: '0',
+  tipo_retencion_id: null,
 }
 
 export default function OrdenCompraDetalle() {
@@ -70,6 +71,7 @@ export default function OrdenCompraDetalle() {
   const mapaProyectos = useMapaNombres('proyectos', 'nombre', { cliente_id: empresaId })
   const mapaUsuarios = useMapaNombres('usuarios', 'nombre')
   const { filas: tiposDocumento } = useCatalogo('tipos_documento_facturacion')
+  const { filas: tiposRetencion } = useCatalogo('tipo_retencion')
 
   const tipoDocSeleccionado = tiposDocumento.find((t) => t.id === form.tipo_doc_id)
   const permiteRetencion = tipoDocSeleccionado?.codigo === '02'
@@ -161,6 +163,27 @@ export default function OrdenCompraDetalle() {
   }, [permiteRetencion])
 
   useEffect(() => {
+    if (!agregando || !form.con_retencion) return
+    if (nuevoItem.tipo_retencion_id) return
+    if (tiposRetencion.length === 0) return
+    const porDefecto = tiposRetencion.find((t) => Number(t.porcentaje) === 8) ?? tiposRetencion[0]
+    setNuevoItem((f) => ({ ...f, tipo_retencion_id: porDefecto.id }))
+  }, [agregando, form.con_retencion, tiposRetencion, nuevoItem.tipo_retencion_id])
+
+  useEffect(() => {
+    // Solo para líneas nuevas: al editar una línea existente no se pisa una
+    // retención ya guardada (puede haber sido ajustada a mano).
+    if (editandoItemId) return
+    if (!form.con_retencion) return
+    const tipo = tiposRetencion.find((t) => t.id === nuevoItem.tipo_retencion_id)
+    if (!tipo) return
+    const precio = Number(nuevoItem.precio) || 0
+    const calculado = precio * ((Number(tipo.porcentaje) || 0) / 100)
+    setNuevoItem((f) => ({ ...f, retencion: String(Number(calculado.toFixed(2))) }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editandoItemId, form.con_retencion, nuevoItem.precio, nuevoItem.tipo_retencion_id, tiposRetencion])
+
+  useEffect(() => {
     if (!editando || !form.presupuesto_id) return
     let cancelled = false
     setCargandoItems(true)
@@ -187,13 +210,22 @@ export default function OrdenCompraDetalle() {
   useEffect(() => {
     if (!editando) return
     if (itemPreseleccionadoAplicado.current) return
-    if (!location.state?.presupuestoItemId) return
     if (presupuestoItems.length === 0) return
 
-    itemPreseleccionadoAplicado.current = true
-    elegirItemPresupuesto(location.state.presupuestoItemId)
-    setTab('items')
-    setAgregando(true)
+    const idsMultiples = location.state?.presupuestoItemIds
+    if (idsMultiples?.length) {
+      itemPreseleccionadoAplicado.current = true
+      precargarLineasDesdePresupuesto(idsMultiples)
+      setTab('items')
+      return
+    }
+
+    if (location.state?.presupuestoItemId) {
+      itemPreseleccionadoAplicado.current = true
+      elegirItemPresupuesto(location.state.presupuestoItemId)
+      setTab('items')
+      setAgregando(true)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editando, presupuestoItems, location.state])
 
@@ -257,9 +289,11 @@ export default function OrdenCompraDetalle() {
       return
     }
     navigate(`/ordenes-compra/${data.id}`, {
-      state: location.state?.presupuestoItemId
-        ? { presupuestoItemId: location.state.presupuestoItemId }
-        : undefined,
+      state: location.state?.presupuestoItemIds?.length
+        ? { presupuestoItemIds: location.state.presupuestoItemIds }
+        : location.state?.presupuestoItemId
+          ? { presupuestoItemId: location.state.presupuestoItemId }
+          : undefined,
     })
   }
 
@@ -306,6 +340,39 @@ export default function OrdenCompraDetalle() {
     }))
   }
 
+  async function precargarLineasDesdePresupuesto(presupuestoItemIds) {
+    setCargandoItems(true)
+
+    let siguienteNumero = items.reduce((max, it) => Math.max(max, it.numero ?? 0), 0) + 1
+    const filas = presupuestoItemIds
+      .map((piId) => presupuestoItems.find((pi) => pi.id === piId))
+      .filter(Boolean)
+      .map((pi) => ({
+        orden_compra_id: id,
+        presupuesto_item_id: pi.id,
+        numero: siguienteNumero++,
+        item: pi.concepto ?? null,
+        cantidad: pi.cantidad ?? 1,
+        precio: pi.precio_unitario ?? 0,
+        inafecto: 0,
+        retencion: 0,
+      }))
+
+    if (filas.length === 0) {
+      setCargandoItems(false)
+      return
+    }
+
+    const { data, error: err } = await supabase.from('orden_compra_items').insert(filas).select()
+
+    setCargandoItems(false)
+    if (err) {
+      setError(err.message)
+      return
+    }
+    setItems((prev) => [...prev, ...(data ?? [])])
+  }
+
   function editarItem(fila) {
     setEditandoItemId(fila.id)
     setNuevoItem({
@@ -315,6 +382,7 @@ export default function OrdenCompraDetalle() {
       precio: String(fila.precio ?? '0'),
       inafecto: String(fila.inafecto ?? '0'),
       retencion: String(fila.retencion ?? '0'),
+      tipo_retencion_id: fila.tipo_retencion_id ?? null,
     })
     setAgregando(true)
   }
@@ -337,6 +405,7 @@ export default function OrdenCompraDetalle() {
       precio: Number(nuevoItem.precio),
       inafecto: nuevoItem.inafecto === '' ? 0 : Number(nuevoItem.inafecto),
       retencion: nuevoItem.retencion === '' ? 0 : Number(nuevoItem.retencion),
+      tipo_retencion_id: form.con_retencion ? nuevoItem.tipo_retencion_id || null : null,
     }
 
     if (editandoItemId) {
@@ -680,6 +749,25 @@ export default function OrdenCompraDetalle() {
                 </FormField>
               </div>
 
+              {form.con_retencion && (
+                <FormField label="Tipo de Retención">
+                  <select
+                    value={nuevoItem.tipo_retencion_id ?? ''}
+                    onChange={(e) =>
+                      setNuevoItem((f) => ({ ...f, tipo_retencion_id: e.target.value || null }))
+                    }
+                    className={inputClass}
+                  >
+                    <option value="">Seleccionar…</option>
+                    {tiposRetencion.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {etiquetaCatalogo(t)} ({t.porcentaje}%)
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField label="Inafecto">
                   <input
@@ -717,7 +805,11 @@ export default function OrdenCompraDetalle() {
             <p className="py-8 text-center text-sm text-navy/50">Cargando…</p>
           ) : (
             <DataTable
-              filas={resolverFilas(items, [], ['orden_compra_id', 'presupuesto_item_id'])}
+              filas={resolverFilas(
+                items,
+                [],
+                ['orden_compra_id', 'presupuesto_item_id', 'tipo_retencion_id']
+              )}
               vacio="No hay artículos agregados a esta orden de compra."
               acciones={
                 isStaff && estado === 'registro'

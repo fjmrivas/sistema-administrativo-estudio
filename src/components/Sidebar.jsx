@@ -41,6 +41,7 @@ const GRUPOS = [
       { to: '/areas', label: 'Áreas' },
       { to: '/secciones-presupuesto', label: 'Secciones de Presupuesto' },
       { to: '/tipos-documento', label: 'Tipos de Documento' },
+      { to: '/tipos-orden-compra', label: 'Tipos de Orden de Compra' },
     ],
   },
 ]

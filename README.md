@@ -478,3 +478,62 @@ necesita un `orden_compra_id` real):
 
 Pendiente, tal como se acordó: el PDF de impresión con marca de agua, y la columna
 "Aprobac. Superv." no se agrega por ahora.
+
+## Ajustes de flujo Presupuesto/Órdenes de Compra (cuarta vuelta)
+
+1. **Presupuesto solo editable en `registro`**: en `PresupuestoDetalle.jsx`, el
+   botón "+ Nuevo Ítem" y las acciones Editar/Borrar de cada línea (dentro del
+   mismo `acciones` que ya tenía el link "Generar OC") ahora están condicionados a
+   `estado === 'registro'`. Con el presupuesto `aprobado` hay que usar
+   "Desaprobar" primero para poder tocar las líneas de nuevo — "Generar OC" y
+   "Generar Factura" siguen disponibles en `aprobado`, no se tocaron (tiene
+   sentido facturar/generar OCs justo después de aprobar).
+2. **Lista de Órdenes de Compra**: se sacaron `creado_en` y `actualizado_en` de la
+   tabla (nuevo tercer argumento `camposOcultar` en el `resolverFilas` de
+   `OrdenesCompra.jsx`).
+3. **Botón "Generar Orden de Compra" (selección múltiple)**: junto a "Generar
+   Factura" en `PresupuestoDetalle.jsx`, usa el mismo `Set` de checkboxes (todas
+   las líneas si no hay ninguna marcada). Navega a `/ordenes-compra/nueva` con
+   `state={{ presupuestoId, presupuestoItemIds: [...] }}` (plural, a diferencia
+   del link "Generar OC" por línea que sigue mandando `presupuestoItemId`
+   singular). `OrdenCompraDetalle.jsx` distingue ambos casos: con un solo id
+   sigue abriendo el mini-formulario de agregar precargado (como antes); con
+   varios ids, apenas se graba la cabecera, inserta directo en
+   `orden_compra_items` una fila por cada línea marcada — `item` = `concepto`,
+   `cantidad` y `precio` = `cantidad`/`precio_unitario` de la línea del
+   presupuesto, `inafecto`/`retencion` en `0` — y aterriza en el tab de artículos
+   ya con todas esas líneas cargadas, listas para ajustar Precio (y el resto) con
+   "Editar" por línea. El Proveedor y demás datos de cabecera los sigue
+   completando el usuario a mano antes de grabar, no hay forma de inferirlos de
+   una línea de presupuesto.
+4. **Fecha por defecto en Nueva Orden de Compra**: ya estaba implementado desde
+   el módulo original (`inicial.fecha = hoy` en `OrdenCompraDetalle.jsx`) — se
+   confirmó que sigue así, no hizo falta ningún cambio.
+5. **Maestro "Tipos de Orden de Compra"** (`/tipos-orden-compra`,
+   `TiposOrdenCompra.jsx` + `NuevoTipoOrdenCompra.jsx`): catálogo global de
+   `tipos_orden_compra` (sin `cliente_id`, mismo criterio que
+   `tipos_documento_facturacion`), solo campo `nombre`. La lista es visible para
+   cualquier usuario logueado (sin gate), pero el botón "+ Nuevo Tipo" y
+   Editar/Borrar de cada fila están condicionados a `isStaff` — a diferencia de
+   "Tipos de Documento" (que es 100% solo lectura, catálogo de SUNAT), este sí es
+   editable por el estudio.
+6. **Retención automática por línea** (`orden_compra_items.tipo_retencion_id`,
+   catálogo `tipo_retencion`): cuando "Con Retención" está activo en la cabecera
+   (documento = Recibo por Honorarios), el mini-formulario de agregar/editar
+   línea muestra un select "Tipo de Retención" (`useCatalogo('tipo_retencion')`,
+   catálogo global). Por defecto elige el tipo con `porcentaje === 8` (o el
+   primero de la lista si no hay ninguno al 8%) apenas se abre el formulario para
+   una línea **nueva**. El campo `retencion` se recalcula automáticamente como
+   `precio × (porcentaje / 100)` cada vez que cambian el Precio o el Tipo de
+   Retención elegidos, pero sigue siendo un input editable — si lo ajustás a
+   mano después, ese valor manual no se pisa solo (el recálculo automático
+   depende de que cambies Precio o Tipo de Retención de nuevo). Al **editar**
+   una línea ya guardada, este auto-cálculo no se dispara al abrir el
+   formulario, para no pisar una retención que ya haya sido ajustada a mano
+   antes — si el usuario cambia Precio o Tipo de Retención durante la edición,
+   ahí sí se recalcula. **`tipo_retencion.porcentaje` es una suposición de
+   nombre de columna** (no tengo el `information_schema.columns` de esa tabla,
+   solo confirmaste que existe `tipo_retencion` con "Renta de 4ta Categoría" al
+   8%) — si la columna se llama distinto, el select va a mostrar "undefined%" en
+   vez del porcentaje y el cálculo va a dar `0`; avisame el nombre real y lo
+   ajusto.

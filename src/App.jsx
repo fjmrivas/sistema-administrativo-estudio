@@ -36,6 +36,8 @@ import NuevaArea from './pages/NuevaArea'
 import SeccionesPresupuesto from './pages/SeccionesPresupuesto'
 import NuevaSeccionPresupuesto from './pages/NuevaSeccionPresupuesto'
 import TiposDocumento from './pages/TiposDocumento'
+import TiposOrdenCompra from './pages/TiposOrdenCompra'
+import NuevoTipoOrdenCompra from './pages/NuevoTipoOrdenCompra'
 import OrdenesCompra from './pages/OrdenesCompra'
 import OrdenCompraDetalle from './pages/OrdenCompraDetalle'
 import Placeholder from './pages/Placeholder'
@@ -110,6 +112,9 @@ function App() {
               element={<NuevaSeccionPresupuesto />}
             />
             <Route path="tipos-documento" element={<TiposDocumento />} />
+            <Route path="tipos-orden-compra" element={<TiposOrdenCompra />} />
+            <Route path="tipos-orden-compra/nuevo" element={<NuevoTipoOrdenCompra />} />
+            <Route path="tipos-orden-compra/:id/editar" element={<NuevoTipoOrdenCompra />} />
             <Route path="ordenes-compra" element={<OrdenesCompra />} />
             <Route path="ordenes-compra/nueva" element={<OrdenCompraDetalle />} />
             <Route path="ordenes-compra/:id" element={<OrdenCompraDetalle />} />

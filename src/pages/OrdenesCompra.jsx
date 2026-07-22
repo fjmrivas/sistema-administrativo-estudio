@@ -57,15 +57,19 @@ export default function OrdenesCompra() {
 
   const ordenesResueltas = useMemo(
     () =>
-      resolverFilas(ordenes, [
-        { campoId: 'proveedor_id', campoDestino: 'proveedor', mapa: mapaProveedores },
-        { campoId: 'tipo_orden_compra_id', campoDestino: 'tipo', mapa: mapaTiposOc },
-        { campoId: 'tipo_doc_id', campoDestino: 'documento', mapa: mapaTiposDoc },
-        { campoId: 'condicion_pago_id', campoDestino: 'condicion_pago', mapa: mapaCondiciones },
-        { campoId: 'presupuesto_id', campoDestino: 'presupuesto', mapa: mapaPresupuestos },
-        { campoId: 'usuario_creador_id', campoDestino: 'creado_por', mapa: mapaUsuarios },
-        { campoId: 'usuario_aprobador_id', campoDestino: 'aprobado_por', mapa: mapaUsuarios },
-      ]),
+      resolverFilas(
+        ordenes,
+        [
+          { campoId: 'proveedor_id', campoDestino: 'proveedor', mapa: mapaProveedores },
+          { campoId: 'tipo_orden_compra_id', campoDestino: 'tipo', mapa: mapaTiposOc },
+          { campoId: 'tipo_doc_id', campoDestino: 'documento', mapa: mapaTiposDoc },
+          { campoId: 'condicion_pago_id', campoDestino: 'condicion_pago', mapa: mapaCondiciones },
+          { campoId: 'presupuesto_id', campoDestino: 'presupuesto', mapa: mapaPresupuestos },
+          { campoId: 'usuario_creador_id', campoDestino: 'creado_por', mapa: mapaUsuarios },
+          { campoId: 'usuario_aprobador_id', campoDestino: 'aprobado_por', mapa: mapaUsuarios },
+        ],
+        ['creado_en', 'actualizado_en']
+      ),
     [
       ordenes,
       mapaProveedores,

@@ -167,6 +167,18 @@ export default function PresupuestoDetalle() {
     })
   }
 
+  function irAGenerarOC() {
+    const relevantes =
+      seleccionados.size > 0 ? items.filter((it) => seleccionados.has(it.id)) : items
+
+    navigate('/ordenes-compra/nueva', {
+      state: {
+        presupuestoId,
+        presupuestoItemIds: relevantes.map((it) => it.id),
+      },
+    })
+  }
+
   async function borrarItem(id) {
     if (!window.confirm('¿Eliminar este ítem? Esta acción no se puede deshacer.')) return
 
@@ -191,7 +203,9 @@ export default function PresupuestoDetalle() {
           Presupuesto{presupuesto?.nombre_presupuesto ? ` — ${presupuesto.nombre_presupuesto}` : ''}
           {presupuesto?.numero != null ? ` (#${presupuesto.numero})` : ''}
         </h2>
-        <NuevoButton to={`/presupuesto/${presupuestoId}/items/nuevo`}>+ Nuevo Ítem</NuevoButton>
+        {estado === 'registro' && (
+          <NuevoButton to={`/presupuesto/${presupuestoId}/items/nuevo`}>+ Nuevo Ítem</NuevoButton>
+        )}
       </div>
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
@@ -276,6 +290,13 @@ export default function PresupuestoDetalle() {
             >
               Generar Factura
             </button>
+            <button
+              type="button"
+              onClick={irAGenerarOC}
+              className="rounded-lg bg-violeta px-3 py-1.5 text-sm font-medium text-white hover:bg-violeta/90"
+            >
+              Generar Orden de Compra
+            </button>
           </div>
         )}
       </div>
@@ -326,10 +347,12 @@ export default function PresupuestoDetalle() {
                   >
                     Generar OC
                   </Link>
-                  <AccionesFila
-                    editarTo={`/presupuesto/${presupuestoId}/items/${fila.id}/editar`}
-                    onBorrar={() => borrarItem(fila.id)}
-                  />
+                  {estado === 'registro' && (
+                    <AccionesFila
+                      editarTo={`/presupuesto/${presupuestoId}/items/${fila.id}/editar`}
+                      onBorrar={() => borrarItem(fila.id)}
+                    />
+                  )}
                 </div>
               )
             : undefined
