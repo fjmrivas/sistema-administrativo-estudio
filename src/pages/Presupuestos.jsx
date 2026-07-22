@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
 import { DataTable } from '../components/DataTable'
@@ -81,6 +81,7 @@ const RENDERIZADORES = {
 }
 
 export default function Presupuestos() {
+  const navigate = useNavigate()
   const { empresaId, loading: empresaLoading, isStaff, error: empresaError } = useEmpresa()
   const [presupuestos, setPresupuestos] = useState([])
   const [loading, setLoading] = useState(true)
@@ -168,22 +169,17 @@ export default function Presupuestos() {
           titulos={TITULOS}
           renderizadores={RENDERIZADORES}
           vacio="No hay presupuestos registrados para esta empresa."
-          acciones={(fila) => (
-            <div className="flex items-center justify-end gap-3 text-sm">
-              <Link
-                to={`/presupuesto/${fila.id}/items`}
-                className="font-medium text-navy hover:underline"
-              >
-                Ver Items
-              </Link>
-              {isStaff && (
-                <AccionesFila
-                  editarTo={`/presupuesto/${fila.id}/editar`}
-                  onBorrar={() => borrar(fila.id)}
-                />
-              )}
-            </div>
-          )}
+          onRowClick={(fila) => navigate(`/presupuesto/${fila.id}/items`)}
+          acciones={
+            isStaff
+              ? (fila) => (
+                  <AccionesFila
+                    editarTo={`/presupuesto/${fila.id}/editar`}
+                    onBorrar={() => borrar(fila.id)}
+                  />
+                )
+              : undefined
+          }
         />
       )}
     </div>

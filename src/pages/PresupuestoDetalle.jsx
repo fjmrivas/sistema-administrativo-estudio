@@ -336,6 +336,11 @@ export default function PresupuestoDetalle() {
             className="h-4 w-4 rounded border-navy/25 text-violeta focus:ring-violeta/30"
           />
         )}
+        onRowClick={
+          isStaff && estado === 'registro'
+            ? (fila) => navigate(`/presupuesto/${presupuestoId}/items/${fila.id}/editar`)
+            : undefined
+        }
         acciones={
           isStaff
             ? (fila) => (
@@ -348,10 +353,7 @@ export default function PresupuestoDetalle() {
                     Generar OC
                   </Link>
                   {estado === 'registro' && (
-                    <AccionesFila
-                      editarTo={`/presupuesto/${presupuestoId}/items/${fila.id}/editar`}
-                      onBorrar={() => borrarItem(fila.id)}
-                    />
+                    <AccionesFila onBorrar={() => borrarItem(fila.id)} />
                   )}
                 </div>
               )

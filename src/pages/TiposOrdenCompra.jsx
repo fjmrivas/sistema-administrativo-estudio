@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { DataTable } from '../components/DataTable'
@@ -6,6 +7,7 @@ import { NuevoButton } from '../components/NuevoButton'
 import { AccionesFila } from '../components/AccionesFila'
 
 export default function TiposOrdenCompra() {
+  const navigate = useNavigate()
   const { isStaff } = useAuth()
   const [tipos, setTipos] = useState([])
   const [loading, setLoading] = useState(true)
@@ -59,15 +61,11 @@ export default function TiposOrdenCompra() {
         <DataTable
           filas={tipos}
           vacio="No hay tipos de orden de compra registrados."
+          onRowClick={
+            isStaff ? (fila) => navigate(`/tipos-orden-compra/${fila.id}/editar`) : undefined
+          }
           acciones={
-            isStaff
-              ? (fila) => (
-                  <AccionesFila
-                    editarTo={`/tipos-orden-compra/${fila.id}/editar`}
-                    onBorrar={() => borrar(fila.id)}
-                  />
-                )
-              : undefined
+            isStaff ? (fila) => <AccionesFila onBorrar={() => borrar(fila.id)} /> : undefined
           }
         />
       )}

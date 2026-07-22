@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
 import { DataTable } from '../components/DataTable'
@@ -9,6 +9,7 @@ import { SinEmpresa } from '../components/SinEmpresa'
 import { useMapaNombres, resolverFilas } from '../lib/relaciones'
 
 export default function CajaChica() {
+  const navigate = useNavigate()
   const { empresaId, loading: empresaLoading, isStaff, error: empresaError } = useEmpresa()
   const [cajas, setCajas] = useState([])
   const [loading, setLoading] = useState(true)
@@ -88,22 +89,17 @@ export default function CajaChica() {
         <DataTable
           filas={cajasResueltas}
           vacio="No hay cajas chicas registradas para esta empresa."
-          acciones={(fila) => (
-            <div className="flex items-center justify-end gap-3 text-sm">
-              <Link
-                to={`/caja-chica/${fila.id}/movimientos`}
-                className="font-medium text-navy hover:underline"
-              >
-                Movimientos
-              </Link>
-              {isStaff && (
-                <AccionesFila
-                  editarTo={`/caja-chica/${fila.id}/editar`}
-                  onBorrar={() => borrar(fila.id)}
-                />
-              )}
-            </div>
-          )}
+          onRowClick={(fila) => navigate(`/caja-chica/${fila.id}/movimientos`)}
+          acciones={
+            isStaff
+              ? (fila) => (
+                  <AccionesFila
+                    editarTo={`/caja-chica/${fila.id}/editar`}
+                    onBorrar={() => borrar(fila.id)}
+                  />
+                )
+              : undefined
+          }
         />
       )}
     </div>

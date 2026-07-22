@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
 import { DataTable } from '../components/DataTable'
@@ -8,6 +9,7 @@ import { SinEmpresa } from '../components/SinEmpresa'
 import { useMapaNombres, resolverFilas } from '../lib/relaciones'
 
 export default function Bancos() {
+  const navigate = useNavigate()
   const { empresaId, loading: empresaLoading, isStaff, error: empresaError } = useEmpresa()
   const [cuentas, setCuentas] = useState([])
   const [documentos, setDocumentos] = useState([])
@@ -155,15 +157,11 @@ export default function Bancos() {
           <DataTable
             filas={cuentasResueltas}
             vacio="No hay cuentas bancarias registradas para esta empresa."
+            onRowClick={
+              isStaff ? (fila) => navigate(`/bancos/cuenta/${fila.id}/editar`) : undefined
+            }
             acciones={
-              isStaff
-                ? (fila) => (
-                    <AccionesFila
-                      editarTo={`/bancos/cuenta/${fila.id}/editar`}
-                      onBorrar={() => borrarCuenta(fila.id)}
-                    />
-                  )
-                : undefined
+              isStaff ? (fila) => <AccionesFila onBorrar={() => borrarCuenta(fila.id)} /> : undefined
             }
           />
         )}
@@ -182,14 +180,12 @@ export default function Bancos() {
           <DataTable
             filas={documentosResueltos}
             vacio="No hay documentos de banco registrados para esta empresa."
+            onRowClick={
+              isStaff ? (fila) => navigate(`/bancos/documento/${fila.id}/editar`) : undefined
+            }
             acciones={
               isStaff
-                ? (fila) => (
-                    <AccionesFila
-                      editarTo={`/bancos/documento/${fila.id}/editar`}
-                      onBorrar={() => borrarDocumento(fila.id)}
-                    />
-                  )
+                ? (fila) => <AccionesFila onBorrar={() => borrarDocumento(fila.id)} />
                 : undefined
             }
           />
@@ -209,14 +205,12 @@ export default function Bancos() {
           <DataTable
             filas={transferenciasResueltas}
             vacio="No hay transferencias registradas para esta empresa."
+            onRowClick={
+              isStaff ? (fila) => navigate(`/bancos/transferencia/${fila.id}/editar`) : undefined
+            }
             acciones={
               isStaff
-                ? (fila) => (
-                    <AccionesFila
-                      editarTo={`/bancos/transferencia/${fila.id}/editar`}
-                      onBorrar={() => borrarTransferencia(fila.id)}
-                    />
-                  )
+                ? (fila) => <AccionesFila onBorrar={() => borrarTransferencia(fila.id)} />
                 : undefined
             }
           />

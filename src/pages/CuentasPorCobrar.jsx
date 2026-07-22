@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
 import { DataTable } from '../components/DataTable'
@@ -10,6 +11,7 @@ import { formatoMoneda } from '../lib/format'
 import { useMapaNombres, resolverFilas } from '../lib/relaciones'
 
 export default function CuentasPorCobrar() {
+  const navigate = useNavigate()
   const { empresaId, loading: empresaLoading, isStaff, error: empresaError } = useEmpresa()
   const [facturas, setFacturas] = useState([])
   const [cobranzas, setCobranzas] = useState([])
@@ -120,15 +122,11 @@ export default function CuentasPorCobrar() {
           <DataTable
             filas={facturasResueltas}
             vacio="No hay facturas registradas para esta empresa."
+            onRowClick={
+              isStaff ? (fila) => navigate(`/cuentas-por-cobrar/${fila.id}/editar`) : undefined
+            }
             acciones={
-              isStaff
-                ? (fila) => (
-                    <AccionesFila
-                      editarTo={`/cuentas-por-cobrar/${fila.id}/editar`}
-                      onBorrar={() => borrarFactura(fila.id)}
-                    />
-                  )
-                : undefined
+              isStaff ? (fila) => <AccionesFila onBorrar={() => borrarFactura(fila.id)} /> : undefined
             }
           />
         )}

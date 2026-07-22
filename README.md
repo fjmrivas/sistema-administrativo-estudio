@@ -531,9 +531,41 @@ Pendiente, tal como se acordó: el PDF de impresión con marca de agua, y la col
    una línea ya guardada, este auto-cálculo no se dispara al abrir el
    formulario, para no pisar una retención que ya haya sido ajustada a mano
    antes — si el usuario cambia Precio o Tipo de Retención durante la edición,
-   ahí sí se recalcula. **`tipo_retencion.porcentaje` es una suposición de
-   nombre de columna** (no tengo el `information_schema.columns` de esa tabla,
-   solo confirmaste que existe `tipo_retencion` con "Renta de 4ta Categoría" al
-   8%) — si la columna se llama distinto, el select va a mostrar "undefined%" en
-   vez del porcentaje y el cálculo va a dar `0`; avisame el nombre real y lo
-   ajusto.
+   ahí sí se recalcula. `tipo_retencion.porcentaje` (nombre de columna
+   confirmado) trae el porcentaje usado tanto en el label del select como en el
+   cálculo.
+
+## Ajustes de experiencia (quinta vuelta)
+
+1. **Precio en 0 al generar OC desde Presupuesto con checkboxes**:
+   `precargarLineasDesdePresupuesto` (en `OrdenCompraDetalle.jsx`) ya no copia
+   `precio_unitario` del presupuesto — deja `precio: 0` en cada línea nueva.
+   Sigue precargando `item` (desde `concepto`) y `cantidad`. Proveedor (a nivel
+   de cabecera) y Precio quedan para completar a mano, como se pidió.
+2. **Filas clickeables en todas las listas**: `DataTable` (`src/components/DataTable.jsx`)
+   ahora acepta un prop opcional `onRowClick(fila)` — pinta la fila con
+   `cursor-pointer` y navega al hacer click en cualquier parte de ella. Los `<td>`
+   de `accionesInicio` y `acciones` llevan `onClick={(e) => e.stopPropagation()}`
+   para que un click en un checkbox o en un botón (Borrar, Anular, Generar OC,
+   etc.) no dispare también la navegación de la fila.
+   - `AccionesFila` (`src/components/AccionesFila.jsx`) ahora trata `editarTo`
+     como opcional — si no se pasa, no renderiza el link "Editar" (queda solo
+     "Borrar"). Se usa así en casi todas las listas, porque el click en la fila
+     ya cubre lo que hacía "Editar".
+   - Aplicado en: Presupuestos (fila → `/presupuesto/:id/items`, sin gate de
+     `isStaff` — es la misma vista de detalle que ya era pública; "Editar"
+     cabecera se mantiene aparte porque apunta a otro formulario), ítems de
+     Presupuesto (fila → editar ítem, gateado por `isStaff` y `estado==='registro'`,
+     igual que ya estaba gateado el botón "Editar"; "Generar OC" se mantiene
+     aparte), Órdenes de Compra (fila → `/ordenes-compra/:id`, sin gate — igual
+     que el link "Ver" que reemplaza; Anular/Eliminar siguen aparte), ítems de
+     Orden de Compra (fila → abre el mini-formulario de edición inline, mismo
+     gate que "Editar" tenía), Facturas, Obligaciones, Clientes, Proyectos,
+     Bancos (3 tablas), Caja Chica (fila → `/caja-chica/:id/movimientos`, sin
+     gate, igual que el link que reemplaza; "Editar" cabecera aparte) y sus
+     Movimientos, y todos los Maestros (Terceros, Ejecutivos, Productores,
+     Áreas, Secciones de Presupuesto, Tipos de Orden de Compra). En los casos
+     donde antes solo `isStaff` veía "Editar", el click de fila quedó con el
+     mismo gate — un no-staff no gana una forma nueva de llegar a un formulario
+     que antes no podía ni ver. "Tipos de Documento" (100% solo lectura, sin
+     ruta de edición) no se tocó.

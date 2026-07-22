@@ -22,6 +22,7 @@ export function DataTable({
   accionesInicio,
   titulos,
   renderizadores,
+  onRowClick,
 }) {
   if (!filas || filas.length === 0) {
     return <p className="py-8 text-center text-sm text-navy/50">{vacio}</p>
@@ -45,9 +46,17 @@ export function DataTable({
         </thead>
         <tbody>
           {filas.map((fila, i) => (
-            <tr key={fila.id ?? i} className="border-b border-navy/5 last:border-0 hover:bg-navy/[0.02]">
+            <tr
+              key={fila.id ?? i}
+              onClick={onRowClick ? () => onRowClick(fila) : undefined}
+              className={`border-b border-navy/5 last:border-0 hover:bg-navy/[0.02] ${
+                onRowClick ? 'cursor-pointer' : ''
+              }`}
+            >
               {accionesInicio && (
-                <td className="whitespace-nowrap px-4 py-3">{accionesInicio(fila)}</td>
+                <td className="whitespace-nowrap px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                  {accionesInicio(fila)}
+                </td>
               )}
               {cols.map((col) => (
                 <td key={col} className="whitespace-nowrap px-4 py-3 text-navy/90">
@@ -57,7 +66,12 @@ export function DataTable({
                 </td>
               ))}
               {acciones && (
-                <td className="whitespace-nowrap px-4 py-3 text-right">{acciones(fila)}</td>
+                <td
+                  className="whitespace-nowrap px-4 py-3 text-right"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {acciones(fila)}
+                </td>
               )}
             </tr>
           ))}

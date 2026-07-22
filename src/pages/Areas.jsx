@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
 import { DataTable } from '../components/DataTable'
@@ -7,6 +8,7 @@ import { AccionesFila } from '../components/AccionesFila'
 import { SinEmpresa } from '../components/SinEmpresa'
 
 export default function Areas() {
+  const navigate = useNavigate()
   const { empresaId, loading: empresaLoading, isStaff, error: empresaError } = useEmpresa()
   const [areas, setAreas] = useState([])
   const [loading, setLoading] = useState(true)
@@ -74,15 +76,9 @@ export default function Areas() {
         <DataTable
           filas={areas}
           vacio="No hay áreas registradas para esta empresa."
+          onRowClick={isStaff ? (fila) => navigate(`/areas/${fila.id}/editar`) : undefined}
           acciones={
-            isStaff
-              ? (fila) => (
-                  <AccionesFila
-                    editarTo={`/areas/${fila.id}/editar`}
-                    onBorrar={() => borrar(fila.id)}
-                  />
-                )
-              : undefined
+            isStaff ? (fila) => <AccionesFila onBorrar={() => borrar(fila.id)} /> : undefined
           }
         />
       )}

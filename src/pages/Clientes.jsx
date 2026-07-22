@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { DataTable } from '../components/DataTable'
 import { NuevoButton } from '../components/NuevoButton'
 import { AccionesFila } from '../components/AccionesFila'
@@ -6,6 +7,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
 export default function Clientes() {
+  const navigate = useNavigate()
   const { isStaff } = useAuth()
   const [clientes, setClientes] = useState([])
   const [loading, setLoading] = useState(true)
@@ -56,15 +58,9 @@ export default function Clientes() {
         <DataTable
           filas={clientes}
           vacio="No hay clientes registrados."
+          onRowClick={isStaff ? (fila) => navigate(`/clientes/${fila.id}/editar`) : undefined}
           acciones={
-            isStaff
-              ? (fila) => (
-                  <AccionesFila
-                    editarTo={`/clientes/${fila.id}/editar`}
-                    onBorrar={() => borrar(fila.id)}
-                  />
-                )
-              : undefined
+            isStaff ? (fila) => <AccionesFila onBorrar={() => borrar(fila.id)} /> : undefined
           }
         />
       )}

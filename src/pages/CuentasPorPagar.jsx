@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
 import { DataTable } from '../components/DataTable'
@@ -16,6 +17,7 @@ const COLOR_SITUACION = {
 }
 
 export default function CuentasPorPagar() {
+  const navigate = useNavigate()
   const { empresaId, loading: empresaLoading, isStaff, error: empresaError } = useEmpresa()
   const [obligaciones, setObligaciones] = useState([])
   const [loading, setLoading] = useState(true)
@@ -127,15 +129,11 @@ export default function CuentasPorPagar() {
         <DataTable
           filas={obligacionesResueltas}
           vacio="No hay obligaciones por pagar registradas para esta empresa."
+          onRowClick={
+            isStaff ? (fila) => navigate(`/cuentas-por-pagar/${fila.id}/editar`) : undefined
+          }
           acciones={
-            isStaff
-              ? (fila) => (
-                  <AccionesFila
-                    editarTo={`/cuentas-por-pagar/${fila.id}/editar`}
-                    onBorrar={() => borrar(fila.id)}
-                  />
-                )
-              : undefined
+            isStaff ? (fila) => <AccionesFila onBorrar={() => borrar(fila.id)} /> : undefined
           }
         />
       )}

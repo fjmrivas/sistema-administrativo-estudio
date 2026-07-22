@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
 import { DataTable } from '../components/DataTable'
@@ -7,6 +8,7 @@ import { AccionesFila } from '../components/AccionesFila'
 import { SinEmpresa } from '../components/SinEmpresa'
 
 export default function SeccionesPresupuesto() {
+  const navigate = useNavigate()
   const { empresaId, loading: empresaLoading, isStaff, error: empresaError } = useEmpresa()
   const [secciones, setSecciones] = useState([])
   const [loading, setLoading] = useState(true)
@@ -74,15 +76,11 @@ export default function SeccionesPresupuesto() {
         <DataTable
           filas={secciones}
           vacio="No hay secciones registradas para esta empresa."
+          onRowClick={
+            isStaff ? (fila) => navigate(`/secciones-presupuesto/${fila.id}/editar`) : undefined
+          }
           acciones={
-            isStaff
-              ? (fila) => (
-                  <AccionesFila
-                    editarTo={`/secciones-presupuesto/${fila.id}/editar`}
-                    onBorrar={() => borrar(fila.id)}
-                  />
-                )
-              : undefined
+            isStaff ? (fila) => <AccionesFila onBorrar={() => borrar(fila.id)} /> : undefined
           }
         />
       )}

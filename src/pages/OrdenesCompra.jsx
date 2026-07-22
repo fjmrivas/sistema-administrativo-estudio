@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
 import { DataTable } from '../components/DataTable'
@@ -41,6 +41,7 @@ function exportarCsv(filas) {
 }
 
 export default function OrdenesCompra() {
+  const navigate = useNavigate()
   const { empresaId, loading: empresaLoading, isStaff, error: empresaError } = useEmpresa()
   const [ordenes, setOrdenes] = useState([])
   const [loading, setLoading] = useState(true)
@@ -187,31 +188,27 @@ export default function OrdenesCompra() {
           filas={ordenesResueltas}
           renderizadores={RENDERIZADORES}
           vacio="No hay órdenes de compra registradas para esta empresa."
-          acciones={(fila) => (
-            <div className="flex items-center justify-end gap-3 text-sm">
-              <Link to={`/ordenes-compra/${fila.id}`} className="font-medium text-navy hover:underline">
-                Ver
-              </Link>
-              {isStaff && fila.estado === 'registro' && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => anular(fila.id)}
-                    className="font-medium text-rojo hover:underline"
-                  >
-                    Anular
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => borrar(fila.id)}
-                    className="font-medium text-rojo hover:underline"
-                  >
-                    Eliminar
-                  </button>
-                </>
-              )}
-            </div>
-          )}
+          onRowClick={(fila) => navigate(`/ordenes-compra/${fila.id}`)}
+          acciones={(fila) =>
+            isStaff && fila.estado === 'registro' ? (
+              <div className="flex items-center justify-end gap-3 text-sm">
+                <button
+                  type="button"
+                  onClick={() => anular(fila.id)}
+                  className="font-medium text-rojo hover:underline"
+                >
+                  Anular
+                </button>
+                <button
+                  type="button"
+                  onClick={() => borrar(fila.id)}
+                  className="font-medium text-rojo hover:underline"
+                >
+                  Eliminar
+                </button>
+              </div>
+            ) : null
+          }
         />
       )}
     </div>

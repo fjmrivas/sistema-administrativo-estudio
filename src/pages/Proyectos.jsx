@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useEmpresa } from '../context/EmpresaContext'
 import { DataTable } from '../components/DataTable'
@@ -8,6 +9,7 @@ import { SinEmpresa } from '../components/SinEmpresa'
 import { useMapaNombres, resolverFilas } from '../lib/relaciones'
 
 export default function Proyectos() {
+  const navigate = useNavigate()
   const { empresaId, loading: empresaLoading, isStaff, error: empresaError } = useEmpresa()
   const [proyectos, setProyectos] = useState([])
   const [loading, setLoading] = useState(true)
@@ -87,15 +89,9 @@ export default function Proyectos() {
         <DataTable
           filas={proyectosResueltos}
           vacio="No hay proyectos registrados para esta empresa."
+          onRowClick={isStaff ? (fila) => navigate(`/proyectos/${fila.id}/editar`) : undefined}
           acciones={
-            isStaff
-              ? (fila) => (
-                  <AccionesFila
-                    editarTo={`/proyectos/${fila.id}/editar`}
-                    onBorrar={() => borrar(fila.id)}
-                  />
-                )
-              : undefined
+            isStaff ? (fila) => <AccionesFila onBorrar={() => borrar(fila.id)} /> : undefined
           }
         />
       )}

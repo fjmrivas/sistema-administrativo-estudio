@@ -353,7 +353,7 @@ export default function OrdenCompraDetalle() {
         numero: siguienteNumero++,
         item: pi.concepto ?? null,
         cantidad: pi.cantidad ?? 1,
-        precio: pi.precio_unitario ?? 0,
+        precio: 0,
         inafecto: 0,
         retencion: 0,
       }))
@@ -811,25 +811,17 @@ export default function OrdenCompraDetalle() {
                 ['orden_compra_id', 'presupuesto_item_id', 'tipo_retencion_id']
               )}
               vacio="No hay artículos agregados a esta orden de compra."
+              onRowClick={isStaff && estado === 'registro' ? editarItem : undefined}
               acciones={
                 isStaff && estado === 'registro'
                   ? (fila) => (
-                      <div className="flex items-center justify-end gap-3 text-sm">
-                        <button
-                          type="button"
-                          onClick={() => editarItem(fila)}
-                          className="font-medium text-violeta hover:underline"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => borrarItemLinea(fila.id)}
-                          className="font-medium text-rojo hover:underline"
-                        >
-                          Borrar
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => borrarItemLinea(fila.id)}
+                        className="font-medium text-rojo hover:underline"
+                      >
+                        Borrar
+                      </button>
                     )
                   : undefined
               }

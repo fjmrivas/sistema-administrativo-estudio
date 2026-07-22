@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useEmpresa } from '../context/EmpresaContext'
@@ -11,6 +11,7 @@ import { formatoMoneda } from '../lib/format'
 import { useMapaNombres, resolverFilas } from '../lib/relaciones'
 
 export default function CajaChicaMovimientos() {
+  const navigate = useNavigate()
   const { cajaId } = useParams()
   const { isStaff } = useAuth()
   const { empresaId } = useEmpresa()
@@ -92,15 +93,13 @@ export default function CajaChicaMovimientos() {
       <DataTable
         filas={movimientosResueltos}
         vacio="No hay movimientos registrados en esta caja."
-        acciones={
+        onRowClick={
           isStaff
-            ? (fila) => (
-                <AccionesFila
-                  editarTo={`/caja-chica/${cajaId}/movimientos/${fila.id}/editar`}
-                  onBorrar={() => borrar(fila.id)}
-                />
-              )
+            ? (fila) => navigate(`/caja-chica/${cajaId}/movimientos/${fila.id}/editar`)
             : undefined
+        }
+        acciones={
+          isStaff ? (fila) => <AccionesFila onBorrar={() => borrar(fila.id)} /> : undefined
         }
       />
     </div>
