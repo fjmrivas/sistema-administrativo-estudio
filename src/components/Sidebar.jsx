@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 
 const GRUPOS = [
@@ -46,44 +47,65 @@ const GRUPOS = [
   },
 ]
 
-function NavGroup({ titulo, items, onNavigate }) {
+function NavGroup({ titulo, items, onNavigate, abierto, onToggle }) {
   return (
-    <div className="mb-6">
-      <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-white/40">
+    <div className="mb-2">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="mb-2 flex w-full items-center justify-between px-3 text-xs font-semibold uppercase tracking-wider text-white/40 hover:text-white/60"
+      >
         {titulo}
-      </p>
-      <ul className="flex flex-col gap-1">
-        {items.map((item) => (
-          <li key={item.to}>
-            <NavLink
-              to={item.to}
-              end={item.end}
-              onClick={onNavigate}
-              className={({ isActive }) =>
-                `block rounded-lg px-3 py-2 text-sm transition ${
-                  isActive
-                    ? 'bg-violeta text-white'
-                    : 'text-white/70 hover:bg-white/10 hover:text-white'
-                }`
-              }
-            >
-              {item.label}
-            </NavLink>
-          </li>
-        ))}
-      </ul>
+        <span className={`transition-transform ${abierto ? 'rotate-90' : ''}`}>›</span>
+      </button>
+      {abierto && (
+        <ul className="mb-4 flex flex-col gap-1">
+          {items.map((item) => (
+            <li key={item.to}>
+              <NavLink
+                to={item.to}
+                end={item.end}
+                onClick={onNavigate}
+                className={({ isActive }) =>
+                  `block rounded-lg px-3 py-2 text-sm transition ${
+                    isActive
+                      ? 'bg-violeta text-white'
+                      : 'text-white/70 hover:bg-white/10 hover:text-white'
+                  }`
+                }
+              >
+                {item.label}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
 
 export function SidebarContent({ onNavigate }) {
+  const [abiertos, setAbiertos] = useState(() =>
+    Object.fromEntries(GRUPOS.map((grupo) => [grupo.titulo, true]))
+  )
+
+  function toggleGrupo(titulo) {
+    setAbiertos((prev) => ({ ...prev, [titulo]: !prev[titulo] }))
+  }
+
   return (
     <nav className="flex h-full flex-col overflow-y-auto px-3 py-6">
       <div className="mb-8 px-3">
         <h1 className="font-display text-lg font-semibold text-white">Estudio Contable</h1>
       </div>
       {GRUPOS.map((grupo) => (
-        <NavGroup key={grupo.titulo} {...grupo} onNavigate={onNavigate} />
+        <NavGroup
+          key={grupo.titulo}
+          {...grupo}
+          onNavigate={onNavigate}
+          abierto={abiertos[grupo.titulo] ?? true}
+          onToggle={() => toggleGrupo(grupo.titulo)}
+        />
       ))}
     </nav>
   )

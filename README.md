@@ -590,3 +590,15 @@ Edge Function ya existe en Supabase y devuelve
   `NuevoTercero.jsx` — hacía falta para poder guardar el valor autocompletado
   desde la consulta de RUC). Se agregó a `inicial`, al prefill de edición y al
   payload de insert/update, como cualquier otro campo del formulario.
+
+## Sidebar: grupos colapsables
+
+Cada grupo del menú (`Sidebar.jsx`) ahora se abre/cierra con click en su título
+— un `<button>` con una flecha (`›`) que rota 90° cuando el grupo está abierto,
+en vez del `<p>` estático de antes. Estado `abiertos` (`{ [titulo]: boolean }`)
+vive en `useState` dentro de `SidebarContent`, derivado directamente del array
+`GRUPOS` (`Object.fromEntries(GRUPOS.map(...))`, todos abiertos por defecto)  —
+cualquier grupo nuevo que se agregue a `GRUPOS` queda colapsable automáticamente
+sin tocar nada más. Es estado en memoria (se pierde en un refresh completo de
+la página, pero se mantiene mientras se navega entre rutas de la SPA, porque
+`Sidebar`/`Layout` no se desmontan en cada cambio de ruta).
