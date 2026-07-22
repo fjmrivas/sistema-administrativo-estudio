@@ -19,3 +19,10 @@ export function formatoFecha(valor) {
   if (Number.isNaN(fecha.getTime())) return String(valor)
   return new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium' }).format(fecha)
 }
+
+export function formatoFechaHora(valor) {
+  if (!valor) return '—'
+  const fecha = new Date(valor)
+  if (Number.isNaN(fecha.getTime())) return String(valor)
+  return new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short' }).format(fecha)
+}

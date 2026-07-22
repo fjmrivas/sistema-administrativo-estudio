@@ -25,7 +25,6 @@ import Presupuestos from './pages/Presupuestos'
 import NuevoPresupuesto from './pages/NuevoPresupuesto'
 import PresupuestoDetalle from './pages/PresupuestoDetalle'
 import NuevoPresupuestoItem from './pages/NuevoPresupuestoItem'
-import NuevaOrdenCompra from './pages/NuevaOrdenCompra'
 import Terceros from './pages/Terceros'
 import NuevoTercero from './pages/NuevoTercero'
 import Ejecutivos from './pages/Ejecutivos'
@@ -37,6 +36,8 @@ import NuevaArea from './pages/NuevaArea'
 import SeccionesPresupuesto from './pages/SeccionesPresupuesto'
 import NuevaSeccionPresupuesto from './pages/NuevaSeccionPresupuesto'
 import TiposDocumento from './pages/TiposDocumento'
+import OrdenesCompra from './pages/OrdenesCompra'
+import OrdenCompraDetalle from './pages/OrdenCompraDetalle'
 import Placeholder from './pages/Placeholder'
 
 function App() {
@@ -109,6 +110,9 @@ function App() {
               element={<NuevaSeccionPresupuesto />}
             />
             <Route path="tipos-documento" element={<TiposDocumento />} />
+            <Route path="ordenes-compra" element={<OrdenesCompra />} />
+            <Route path="ordenes-compra/nueva" element={<OrdenCompraDetalle />} />
+            <Route path="ordenes-compra/:id" element={<OrdenCompraDetalle />} />
             <Route path="presupuesto" element={<Presupuestos />} />
             <Route path="presupuesto/nuevo" element={<NuevoPresupuesto />} />
             <Route path="presupuesto/:id/editar" element={<NuevoPresupuesto />} />
@@ -120,10 +124,6 @@ function App() {
             <Route
               path="presupuesto/:presupuestoId/items/:id/editar"
               element={<NuevoPresupuestoItem />}
-            />
-            <Route
-              path="presupuesto/:presupuestoId/items/:itemId/oc/nueva"
-              element={<NuevaOrdenCompra />}
             />
             <Route
               path="libros-electronicos"

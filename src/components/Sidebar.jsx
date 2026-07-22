@@ -20,7 +20,10 @@ const GRUPOS = [
   },
   {
     titulo: 'Planeamiento',
-    items: [{ to: '/presupuesto', label: 'Presupuesto' }],
+    items: [
+      { to: '/presupuesto', label: 'Presupuesto' },
+      { to: '/ordenes-compra', label: 'Órdenes de Compra' },
+    ],
   },
   {
     titulo: 'Cumplimiento SUNAT',

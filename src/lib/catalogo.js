@@ -5,11 +5,12 @@ export function etiquetaCatalogo(fila) {
   if (!fila) return ''
   return (
     fila.nombre ||
+    fila.nombre_presupuesto ||
     fila.descripcion ||
     fila.razon_social ||
     fila.nro_cuenta ||
     fila.codigo ||
-    fila.numero ||
+    (fila.numero != null ? `#${fila.numero}` : null) ||
     `#${String(fila.id).slice(0, 8)}`
   )
 }

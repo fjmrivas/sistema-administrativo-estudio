@@ -333,23 +333,84 @@ Editar/Borrar de un presupuesto individual siguen apuntando a la tabla
 `presupuestos` (no a la vista), igual que ya pasaba con obligaciones/
 `v_obligaciones_situacion` — la vista es solo para leer la lista.
 
-## Órdenes de Compra
+## Ajustes de detalle en Presupuesto (segunda vuelta)
 
-Tabla `ordenes_compra`, columnas confirmadas por `information_schema.columns`.
-Botón "Generar OC" en cada línea de ítem del detalle de presupuesto
-(`PresupuestoDetalle.jsx`, junto a Editar/Borrar) — a diferencia de Editar/Borrar,
-**no** está gateado por `isStaff`, para seguir el mismo criterio que el resto de
-los botones "+ Nuevo" de la app (la seguridad real la da la RLS, no un chequeo de
-rol en el frontend).
+- **Costo Real / Margen Real** en la tabla de ítems (`PresupuestoDetalle.jsx`) ahora
+  muestran `costo_real_calculado` y `margen_real_monto` de
+  `v_presupuesto_items_margen` bajo esas etiquetas exactas (vía `titulos`); el
+  `costo_real` manual/antiguo se oculta (`camposOcultar` de `resolverFilas`) para no
+  tener dos columnas ambiguas con nombres parecidos.
+- **Tipo de IGV** (`tipo_igv_id`) se agregó como select en la cabecera del
+  presupuesto, catálogo global `tipos_igv` (sin `cliente_id`, como
+  `tipos_documento_facturacion`).
+- **Usuario que aprobó** (`usuario_aprobador_id` resuelto vía `usuarios.nombre`,
+  sin filtrar por `cliente_id` porque quien aprueba suele ser staff con
+  `cliente_id = NULL`) y **Última actualización** (`actualizado_en`, con hora —
+  nuevo helper `formatoFechaHora` en `src/lib/format.js`) se muestran de solo
+  lectura en el detalle, solo cuando existen.
 
-Abre `NuevaOrdenCompra.jsx` (`/presupuesto/:presupuestoId/items/:itemId/oc/nueva`),
-formulario simple: Proveedor (`terceros` filtrado por `tipo IN ('proveedor',
-'ambos')`), Concepto, Fecha (default hoy), Moneda, Monto. `presupuesto_item_id` se
-fija desde el `:itemId` de la URL — no es un campo del formulario. `numero` y
-`estado` no se envían nunca (se autogeneran en la base, mismo patrón que
-`presupuestos.numero`).
+## Órdenes de Compra (módulo completo)
 
-Si el insert falla — por ejemplo si hay un trigger que valida que la OC no exceda
-el tope de costo estimado del ítem — el mensaje de error de Postgres se muestra tal
-cual, sin interceptarlo ni reformatearlo (mismo `setError(err.message)` que usa
-toda la app).
+Reemplaza el botón simple "Generar OC" que se había armado antes (se borró
+`NuevaOrdenCompra.jsx` y su ruta). Tablas `ordenes_compra` / `orden_compra_items`,
+columnas confirmadas por `information_schema.columns`.
+
+**`ordenes_compra` no tiene `cliente_id` propio** — se relaciona con la empresa
+indirectamente vía `presupuesto_id` (igual patrón que `documentos_banco`/
+`transferencias_entre_cuentas` en Bancos): `OrdenesCompra.jsx` primero trae los
+`presupuestos.id` de la empresa activa y después filtra `ordenes_compra` con
+`.in('presupuesto_id', ids)`.
+
+**Lista** (`/ordenes-compra`, `OrdenesCompra.jsx`): FKs resueltas a nombre
+(proveedor, tipo, documento, condición de pago, presupuesto, creado/aprobado por),
+badge de estado. Botones: "+ Nueva Orden de Compra", "Exportar" (CSV client-side,
+sin librerías nuevas — arma el CSV a mano y dispara la descarga con un Blob), y por
+fila "Ver" (siempre), "Anular"/"Eliminar" (solo `isStaff` y `estado='registro'`).
+"Exportar" es un botón único de página que exporta la lista completa cargada, no un
+botón por fila — no quedó explícito en el pedido cuál de las dos interpretaciones
+querías, avisame si en realidad era por-fila.
+
+**Detalle** (`/ordenes-compra/nueva` y `/ordenes-compra/:id`, ambos en
+`OrdenCompraDetalle.jsx` — mismo componente para alta y edición, como el resto de
+la app) con dos tabs, "Datos Generales" y "Detalle de Artículos" (la segunda
+deshabilitada hasta que la cabecera tenga `id`, porque `orden_compra_items`
+necesita un `orden_compra_id` real):
+
+- El selector de **Presupuesto** (`CatalogoSelect` filtrado por `cliente_id` y
+  `estado: 'aprobado'`) solo aparece en modo alta; una vez grabado queda fijo. Al
+  elegirlo (o al cargar una OC existente), se trae ese presupuesto completo y se
+  muestran de solo lectura Cliente/Proyecto (resueltos) / Nombre del Presupuesto /
+  Moneda / Tipo de Cambio — estos dos últimos también se copian tal cual al
+  `insert`/`update` de la OC (no son editables de forma independiente).
+- El selector de **Proveedor** (`terceros` tipo proveedor/ambos) trae RUC y
+  Teléfono de solo lectura al elegirlo. **`terceros` no tiene columna `dirección`**
+  según el esquema confirmado — no se pudo mostrar ese dato, avisame si el nombre
+  de columna es otro.
+- **Documento** (`tipo_doc_id`) usa `useCatalogo('tipos_documento_facturacion')`
+  directo (no el `CatalogoSelect` genérico) porque necesita el `codigo` de la fila
+  elegida, no solo su `id`, para la regla de "Con Retención": el checkbox solo se
+  habilita si el documento elegido tiene `codigo === '02'` (Recibo por Honorarios);
+  si no, queda deshabilitado y se fuerza a `false`.
+- Botón **Grabar**: `insert` (alta, con `usuario_creador_id` = `perfil.id` del
+  usuario logueado) o `update` (edición) sobre `ordenes_compra`. `numero` y
+  `estado` nunca se envían — quedan en su default de la base
+  (`numero` se autogenera igual que `presupuestos.numero`).
+- Botón **Aprobar** (visible con `isStaff` y `estado='registro'`): `update` directo
+  a `estado='aprobado'`, `fecha_aprobacion` = hoy, `usuario_aprobador_id` =
+  `perfil.id` — sin trigger en la base todavía, tal como se pidió.
+- Tab **Detalle de Artículos**: botón "+ Agregar" abre un mini-formulario inline
+  (no una ruta separada, para compartir estado con la página padre sin
+  complicarlo) con un select de líneas de `presupuesto_items` del presupuesto
+  elegido (etiquetadas `#item_numero — concepto`). Al elegir una, precarga el
+  campo `item` con el `concepto` de esa línea (editable), más Cantidad/Precio/
+  Inafecto/Retención editables. `numero` de la línea se calcula igual que en
+  Presupuesto (máximo existente + 1). **`sub_total`, `igv` y `total` nunca se
+  envían** — son columnas generadas. Si el insert falla (por ejemplo un trigger
+  que valide el tope de costo), el `error.message` de Postgres se muestra tal
+  cual, sin interceptarlo.
+- No hay edición ni borrado de líneas individuales de `orden_compra_items`
+  todavía (el pedido solo mencionaba "Agregar") — si hace falta corregir una
+  línea ya cargada, avisame y lo agrego.
+
+Pendiente, tal como se acordó: el PDF de impresión con marca de agua, y la columna
+"Aprobac. Superv." no se agrega por ahora.

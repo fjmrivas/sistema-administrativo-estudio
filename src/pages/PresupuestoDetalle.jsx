@@ -7,7 +7,7 @@ import { DataTable } from '../components/DataTable'
 import { NuevoButton } from '../components/NuevoButton'
 import { AccionesFila } from '../components/AccionesFila'
 import { KpiCard } from '../components/KpiCard'
-import { formatoMoneda, formatoFecha } from '../lib/format'
+import { formatoMoneda, formatoFecha, formatoFechaHora } from '../lib/format'
 import { useMapaNombres, resolverFilas } from '../lib/relaciones'
 import { COLOR_ESTADO, ETIQUETA_ESTADO } from '../lib/estadoDocumento'
 
@@ -25,6 +25,7 @@ export default function PresupuestoDetalle() {
 
   const mapaProveedores = useMapaNombres('terceros', 'razon_social', { cliente_id: empresaId })
   const mapaSecciones = useMapaNombres('secciones_presupuesto', 'nombre', { cliente_id: empresaId })
+  const mapaUsuarios = useMapaNombres('usuarios', 'nombre')
 
   const itemsResueltos = useMemo(
     () =>
@@ -34,10 +35,16 @@ export default function PresupuestoDetalle() {
           { campoId: 'proveedor_id', campoDestino: 'proveedor', mapa: mapaProveedores },
           { campoId: 'seccion_id', campoDestino: 'seccion', mapa: mapaSecciones },
         ],
-        ['presupuesto_id']
+        // costo_real: valor manual antiguo, ambiguo frente a costo_real_calculado
+        ['presupuesto_id', 'costo_real']
       ),
     [items, mapaProveedores, mapaSecciones]
   )
+
+  const ITEMS_TITULOS = {
+    costo_real_calculado: 'Costo Real',
+    margen_real_monto: 'Margen Real',
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -151,6 +158,22 @@ export default function PresupuestoDetalle() {
           </p>
         )}
 
+        {presupuesto?.usuario_aprobador_id && (
+          <p className="text-sm text-navy/60">
+            Usuario que aprobó:{' '}
+            <span className="font-medium text-navy">
+              {mapaUsuarios.get(presupuesto.usuario_aprobador_id) ?? '—'}
+            </span>
+          </p>
+        )}
+
+        {presupuesto?.actualizado_en && (
+          <p className="text-sm text-navy/60">
+            Última actualización:{' '}
+            <span className="font-medium text-navy">{formatoFechaHora(presupuesto.actualizado_en)}</span>
+          </p>
+        )}
+
         {isStaff && estado === 'registro' && (
           <div className="flex gap-2">
             <button
@@ -234,23 +257,18 @@ export default function PresupuestoDetalle() {
 
       <DataTable
         filas={itemsResueltos}
+        titulos={ITEMS_TITULOS}
         vacio="No hay ítems registrados en este presupuesto."
-        acciones={(fila) => (
-          <div className="flex items-center justify-end gap-3 text-sm">
-            <Link
-              to={`/presupuesto/${presupuestoId}/items/${fila.id}/oc/nueva`}
-              className="font-medium text-violeta hover:underline"
-            >
-              Generar OC
-            </Link>
-            {isStaff && (
-              <AccionesFila
-                editarTo={`/presupuesto/${presupuestoId}/items/${fila.id}/editar`}
-                onBorrar={() => borrarItem(fila.id)}
-              />
-            )}
-          </div>
-        )}
+        acciones={
+          isStaff
+            ? (fila) => (
+                <AccionesFila
+                  editarTo={`/presupuesto/${presupuestoId}/items/${fila.id}/editar`}
+                  onBorrar={() => borrarItem(fila.id)}
+                />
+              )
+            : undefined
+        }
       />
     </div>
   )

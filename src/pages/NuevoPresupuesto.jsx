@@ -18,6 +18,7 @@ const inicial = {
   moneda: 'PEN',
   tipo_cambio: '',
   tipo_doc_emitir_id: null,
+  tipo_igv_id: null,
   deudor_id: null,
   proyecto_id: null,
   fee_porcentaje: '0',
@@ -61,6 +62,7 @@ export default function NuevoPresupuesto() {
             moneda: data.moneda ?? 'PEN',
             tipo_cambio: data.tipo_cambio != null ? String(data.tipo_cambio) : '',
             tipo_doc_emitir_id: data.tipo_doc_emitir_id,
+            tipo_igv_id: data.tipo_igv_id,
             deudor_id: data.deudor_id,
             proyecto_id: data.proyecto_id,
             fee_porcentaje: data.fee_porcentaje != null ? String(data.fee_porcentaje) : '0',
@@ -110,6 +112,7 @@ export default function NuevoPresupuesto() {
       moneda: form.moneda,
       tipo_cambio: form.tipo_cambio === '' ? null : Number(form.tipo_cambio),
       tipo_doc_emitir_id: form.tipo_doc_emitir_id || null,
+      tipo_igv_id: form.tipo_igv_id || null,
       deudor_id: form.deudor_id || null,
       proyecto_id: form.proyecto_id || null,
       fee_porcentaje: form.fee_porcentaje === '' ? 0 : Number(form.fee_porcentaje),
@@ -224,13 +227,22 @@ export default function NuevoPresupuesto() {
           />
         </FormField>
 
-        <FormField label="Tipo de documento a emitir">
-          <CatalogoSelect
-            tabla="tipos_documento_facturacion"
-            value={form.tipo_doc_emitir_id}
-            onChange={(valor) => setForm((f) => ({ ...f, tipo_doc_emitir_id: valor }))}
-          />
-        </FormField>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField label="Tipo de documento a emitir">
+            <CatalogoSelect
+              tabla="tipos_documento_facturacion"
+              value={form.tipo_doc_emitir_id}
+              onChange={(valor) => setForm((f) => ({ ...f, tipo_doc_emitir_id: valor }))}
+            />
+          </FormField>
+          <FormField label="Tipo de IGV">
+            <CatalogoSelect
+              tabla="tipos_igv"
+              value={form.tipo_igv_id}
+              onChange={(valor) => setForm((f) => ({ ...f, tipo_igv_id: valor }))}
+            />
+          </FormField>
+        </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField label="Moneda">
