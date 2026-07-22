@@ -56,6 +56,7 @@ export default function OrdenCompraDetalle() {
   const [cargandoItems, setCargandoItems] = useState(false)
   const [agregando, setAgregando] = useState(false)
   const [nuevoItem, setNuevoItem] = useState(itemInicial)
+  const [editandoItemId, setEditandoItemId] = useState(null)
   const [errorItem, setErrorItem] = useState(null)
   const [guardandoItem, setGuardandoItem] = useState(false)
 
@@ -269,10 +270,56 @@ export default function OrdenCompraDetalle() {
     }))
   }
 
-  async function agregarItem(e) {
+  function editarItem(fila) {
+    setEditandoItemId(fila.id)
+    setNuevoItem({
+      presupuesto_item_id: fila.presupuesto_item_id,
+      item: fila.item ?? '',
+      cantidad: String(fila.cantidad ?? '1'),
+      precio: String(fila.precio ?? '0'),
+      inafecto: String(fila.inafecto ?? '0'),
+      retencion: String(fila.retencion ?? '0'),
+    })
+    setAgregando(true)
+  }
+
+  function cancelarItem() {
+    setAgregando(false)
+    setEditandoItemId(null)
+    setNuevoItem(itemInicial)
+  }
+
+  async function guardarItem(e) {
     e.preventDefault()
     setErrorItem(null)
     setGuardandoItem(true)
+
+    const campos = {
+      presupuesto_item_id: nuevoItem.presupuesto_item_id || null,
+      item: nuevoItem.item || null,
+      cantidad: nuevoItem.cantidad === '' ? 1 : Number(nuevoItem.cantidad),
+      precio: Number(nuevoItem.precio),
+      inafecto: nuevoItem.inafecto === '' ? 0 : Number(nuevoItem.inafecto),
+      retencion: nuevoItem.retencion === '' ? 0 : Number(nuevoItem.retencion),
+    }
+
+    if (editandoItemId) {
+      const { data, error: err } = await supabase
+        .from('orden_compra_items')
+        .update(campos)
+        .eq('id', editandoItemId)
+        .select()
+        .single()
+
+      setGuardandoItem(false)
+      if (err) {
+        setErrorItem(err.message)
+        return
+      }
+      setItems((prev) => prev.map((it) => (it.id === editandoItemId ? data : it)))
+      cancelarItem()
+      return
+    }
 
     const siguienteNumero = items.reduce((max, it) => Math.max(max, it.numero ?? 0), 0) + 1
 
@@ -280,13 +327,8 @@ export default function OrdenCompraDetalle() {
       .from('orden_compra_items')
       .insert({
         orden_compra_id: id,
-        presupuesto_item_id: nuevoItem.presupuesto_item_id || null,
         numero: siguienteNumero,
-        item: nuevoItem.item || null,
-        cantidad: nuevoItem.cantidad === '' ? 1 : Number(nuevoItem.cantidad),
-        precio: Number(nuevoItem.precio),
-        inafecto: nuevoItem.inafecto === '' ? 0 : Number(nuevoItem.inafecto),
-        retencion: nuevoItem.retencion === '' ? 0 : Number(nuevoItem.retencion),
+        ...campos,
       })
       .select()
       .single()
@@ -297,8 +339,17 @@ export default function OrdenCompraDetalle() {
       return
     }
     setItems((prev) => [...prev, data])
-    setNuevoItem(itemInicial)
-    setAgregando(false)
+    cancelarItem()
+  }
+
+  async function borrarItemLinea(itemId) {
+    if (!window.confirm('¿Borrar esta línea del detalle de artículos?')) return
+    const { error: err } = await supabase.from('orden_compra_items').delete().eq('id', itemId)
+    if (err) {
+      setError(err.message)
+      return
+    }
+    setItems((prev) => prev.filter((it) => it.id !== itemId))
   }
 
   const clienteNombre = presupuestoInfo ? mapaClientes.get(presupuestoInfo.cliente_id) : null
@@ -430,6 +481,10 @@ export default function OrdenCompraDetalle() {
                 Teléfono:{' '}
                 <span className="font-medium text-navy">{proveedorInfo.telefono ?? '—'}</span>
               </p>
+              <p>
+                Dirección:{' '}
+                <span className="font-medium text-navy">{proveedorInfo.direccion ?? '—'}</span>
+              </p>
             </div>
           )}
 
@@ -514,19 +569,21 @@ export default function OrdenCompraDetalle() {
 
       {tab === 'items' && editando && (
         <div>
-          <div className="mb-4 flex justify-end">
-            <button
-              type="button"
-              onClick={() => setAgregando((v) => !v)}
-              className="rounded-lg bg-violeta px-4 py-2 text-sm font-medium text-white hover:bg-violeta/90"
-            >
-              {agregando ? 'Cancelar' : '+ Agregar'}
-            </button>
-          </div>
+          {estado === 'registro' && (
+            <div className="mb-4 flex justify-end">
+              <button
+                type="button"
+                onClick={() => (agregando ? cancelarItem() : setAgregando(true))}
+                className="rounded-lg bg-violeta px-4 py-2 text-sm font-medium text-white hover:bg-violeta/90"
+              >
+                {agregando ? 'Cancelar' : '+ Agregar'}
+              </button>
+            </div>
+          )}
 
-          {agregando && (
+          {agregando && estado === 'registro' && (
             <form
-              onSubmit={agregarItem}
+              onSubmit={guardarItem}
               className="mb-6 flex flex-col gap-4 rounded-xl border border-navy/10 bg-white p-6"
             >
               <FormField label="Línea del presupuesto" required>
@@ -605,8 +662,8 @@ export default function OrdenCompraDetalle() {
 
               <FormActions
                 submitting={guardandoItem}
-                onCancel={() => setAgregando(false)}
-                label="Guardar línea"
+                onCancel={cancelarItem}
+                label={editandoItemId ? 'Guardar cambios' : 'Guardar línea'}
               />
             </form>
           )}
@@ -617,6 +674,28 @@ export default function OrdenCompraDetalle() {
             <DataTable
               filas={resolverFilas(items, [], ['orden_compra_id', 'presupuesto_item_id'])}
               vacio="No hay artículos agregados a esta orden de compra."
+              acciones={
+                isStaff && estado === 'registro'
+                  ? (fila) => (
+                      <div className="flex items-center justify-end gap-3 text-sm">
+                        <button
+                          type="button"
+                          onClick={() => editarItem(fila)}
+                          className="font-medium text-violeta hover:underline"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => borrarItemLinea(fila.id)}
+                          className="font-medium text-rojo hover:underline"
+                        >
+                          Borrar
+                        </button>
+                      </div>
+                    )
+                  : undefined
+              }
             />
           )}
         </div>

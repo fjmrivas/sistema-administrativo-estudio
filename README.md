@@ -382,10 +382,8 @@ necesita un `orden_compra_id` real):
   muestran de solo lectura Cliente/Proyecto (resueltos) / Nombre del Presupuesto /
   Moneda / Tipo de Cambio — estos dos últimos también se copian tal cual al
   `insert`/`update` de la OC (no son editables de forma independiente).
-- El selector de **Proveedor** (`terceros` tipo proveedor/ambos) trae RUC y
-  Teléfono de solo lectura al elegirlo. **`terceros` no tiene columna `dirección`**
-  según el esquema confirmado — no se pudo mostrar ese dato, avisame si el nombre
-  de columna es otro.
+- El selector de **Proveedor** (`terceros` tipo proveedor/ambos) trae RUC,
+  Teléfono y Dirección de solo lectura al elegirlo (`terceros.direccion`).
 - **Documento** (`tipo_doc_id`) usa `useCatalogo('tipos_documento_facturacion')`
   directo (no el `CatalogoSelect` genérico) porque necesita el `codigo` de la fila
   elegida, no solo su `id`, para la regla de "Con Retención": el checkbox solo se
@@ -405,12 +403,17 @@ necesita un `orden_compra_id` real):
   campo `item` con el `concepto` de esa línea (editable), más Cantidad/Precio/
   Inafecto/Retención editables. `numero` de la línea se calcula igual que en
   Presupuesto (máximo existente + 1). **`sub_total`, `igv` y `total` nunca se
-  envían** — son columnas generadas. Si el insert falla (por ejemplo un trigger
-  que valide el tope de costo), el `error.message` de Postgres se muestra tal
-  cual, sin interceptarlo.
-- No hay edición ni borrado de líneas individuales de `orden_compra_items`
-  todavía (el pedido solo mencionaba "Agregar") — si hace falta corregir una
-  línea ya cargada, avisame y lo agrego.
+  envían** — son columnas generadas. Si el insert/update falla (por ejemplo un
+  trigger que valide el tope de costo), el `error.message` de Postgres se
+  muestra tal cual, sin interceptarlo.
+- Cada línea de la tabla tiene **Editar/Borrar** (mismo mini-formulario inline
+  para editar — precarga los campos de esa línea; "Borrar" pide confirmación con
+  `window.confirm` y hace `delete` directo sobre `orden_compra_items`), visibles
+  solo con `isStaff` y `estado === 'registro'` (mismo criterio que el resto de la
+  app). El botón "+ Agregar" también se oculta cuando `estado !== 'registro'`
+  (sin el gateo por `isStaff`, igual que los demás botones "+ Nuevo" de la app —
+  la RLS es la que realmente lo protege) — una vez aprobada la OC el tab queda de
+  solo lectura, sin forma de agregar, editar ni borrar líneas desde la UI.
 
 Pendiente, tal como se acordó: el PDF de impresión con marca de agua, y la columna
 "Aprobac. Superv." no se agrega por ahora.
